@@ -1,0 +1,65 @@
+from flask import Flask, render_template, request, jsonify, redirect, url_for
+
+app = Flask(__name__)
+
+# Dicionário de escritórios e suas respectivas salas
+offices = {
+    'EBM Office Goiânia': ['Recepção', 'Sala Aton', 'Sala Chateau Marista', 'Grann Parc', 
+                           'Sala Metropolitan', 'Sala Nasa', 'Sala Uber',
+                           'Sala Walk', 'Studio'],
+    'EBM Office Campinas': ['Sala Smart Cambuí', 'Sala Wish Taquaral'],
+    'EBM Espaço Goinânia': ['Auditório', 'Long Wide (Primeiro Andar)', 'Lounge Wish', 
+                            'Relacionamento 1', 'Relacionamento 2', 'Relacionamento 3',
+                            'Sala Kazas', 'Sala Metropolitan0', 'Sala Smart', 
+                            'Sala The Sun', 'Sala Vinhas', 'Sala Wish',
+                            'Sala Wish Areião', 'Sala Wish Trinta e Sete', 'Sala Wish Vaca Brava',
+                            'Wide']
+}
+
+@app.route('/')
+def index():
+    return render_template('index.html', offices=offices.keys())
+
+@app.route('/get_rooms', methods=['POST'])
+def get_rooms():
+    selected_office = request.json['office']
+    rooms = offices.get(selected_office, [])
+    return jsonify(rooms)
+
+@app.route('/select_room', methods=['POST'])
+def select_room():
+    selected_office = request.form['office']
+    selected_room = request.form['room']
+    return render_template('sala_form.html', office=selected_office, room=selected_room)
+
+@app.route('/submit_form', methods=['POST'])
+def submit_form():
+    office = request.form['office']
+    room = request.form['room']
+    
+    # Coleta os dados dos itens do formulário
+    cafe_expresso_sem_acucar = request.form.get('Café expresso sem açucar', 0)
+    cafe_expresso_com_acucar = request.form.get('Café expresso com açucar', 0)
+    cafe_expresso_com_adocante = request.form.get('Café expresso com adoçante', 0)
+    cafe_tradicional_sem_acucar = request.form.get('Café tradicional sem açucar', 0)
+    cafe_tradicional_com_acucar = request.form.get('Café tradicional com açucar', 0)
+    cafe_tradicional_com_adocante = request.form.get('Café tradicional com adoçante', 0)
+    copo = request.form.get('Copo', 0)
+    jarra_agua = request.form.get('Jarra de água', 0)
+    limpeza_sala = request.form.get('Limpeza da Sala', 'Não')
+    
+    return render_template('confirm_pedido.html',
+                           office=office,
+                           room=room,
+                           cafe_expresso_sem_acucar=cafe_expresso_sem_acucar,
+                           cafe_expresso_com_acucar=cafe_expresso_com_acucar,
+                           cafe_expresso_com_adocante=cafe_expresso_com_adocante,
+                           cafe_tradicional_sem_acucar=cafe_tradicional_sem_acucar,
+                           cafe_tradicional_com_acucar=cafe_tradicional_com_acucar,
+                           cafe_tradicional_com_adocante=cafe_tradicional_com_adocante,
+                           copo=copo,
+                           jarra_agua=jarra_agua,
+                           limpeza_sala=limpeza_sala)
+
+if __name__ == '__main__':
+    app.run(debug=True)
