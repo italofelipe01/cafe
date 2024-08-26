@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedido Confirmado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png"> <!-- Adiciona o favicon -->
+</head>
+<body>
+    <a href="{{ url_for('index') }}">
+        <img src="{{ url_for('static', filename='logo.svg') }}" alt="Logo" class="logo">
+    </a>
+    <h1>Pedido solicitado com sucesso!</h1>
+
+    <p><strong>Escritório:</strong> {{ office }}</p>
+    <p><strong>Sala:</strong> {{ room }}</p>
+
+    <h2>Itens solicitados:</h2>
+    <ul>
+        <li>Café expresso sem açúcar: {{ cafe_expresso_sem_acucar }}</li>
+        <li>Café expresso com açúcar: {{ cafe_expresso_com_acucar }}</li>
+        <li>Café expresso com adoçante: {{ cafe_expresso_com_adocante }}</li>
+        <li>Café tradicional sem açúcar: {{ cafe_tradicional_sem_acucar }}</li>
+        <li>Café tradicional com açúcar: {{ cafe_tradicional_com_acucar }}</li>
+        <li>Café tradicional com adoçante: {{ cafe_tradicional_com_adocante }}</li>
+        <li>Copo: {{ copo }}</li>
+        <li>Jarra de água: {{ jarra_agua }}</li>
+        <li>Limpeza da Sala: {{ limpeza_sala }}</li>
+    </ul>
+</body>
+</html>

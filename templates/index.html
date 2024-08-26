@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espaço café EBM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png"> <!-- Adiciona o favicon -->
+</head>
+<body>
+    <a href="{{ url_for('index') }}">
+        <img src="{{ url_for('static', filename='logo.svg') }}" alt="Logo" class="logo">
+    </a>
+    <h1>Bem-vindo ao Espaço Café EBM</h1>
+    <form id="officeForm" method="POST" action="/select_room">
+        <label for="office">Escritório:</label>
+        <select id="office" name="office" required>
+            <option value="">Selecione um Escritório</option>
+            {% for office in offices %}
+            <option value="{{ office }}">{{ office }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="room">Sala:</label>
+        <select id="room" name="room" required>
+            <option value="">Selecione uma Sala</option>
+        </select>
+
+        <input type="submit" value="Avançar">
+    </form>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
