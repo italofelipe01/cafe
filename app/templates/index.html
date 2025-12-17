@@ -8,11 +8,11 @@
     <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png"> <!-- Adiciona o favicon -->
 </head>
 <body>
-    <a href="{{ url_for('index') }}">
+    <a href="{{ url_for('main.index') }}">
         <img src="{{ url_for('static', filename='logo.svg') }}" alt="Logo" class="logo">
     </a>
     <h1>Bem-vindo ao Espaço Café EBM</h1>
-    <form id="officeForm" method="POST" action="/select_room">
+    <form id="officeForm" method="POST" action="{{ url_for('main.select_room') }}">
         <label for="office">Escritório:</label>
         <select id="office" name="office" required>
             <option value="">Selecione um Escritório</option>
