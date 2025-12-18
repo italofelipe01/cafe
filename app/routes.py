@@ -22,10 +22,14 @@ def index():
 
 @bp.route('/get_rooms', methods=['POST'])
 def get_rooms():
+    selected_office = None
+    
     # Check if request is JSON
     if request.is_json:
-        data = request.json
-        selected_office = data.get('office')
+        data = request.get_json() # É preferível usar get_json() ao invés da propriedade .json
+        # Verifica se data existe e é um dicionário para satisfazer o Pylance
+        if data and isinstance(data, dict):
+            selected_office = data.get('office')
     else:
         # Fallback for form data or if someone sends it differently
         selected_office = request.form.get('office')
