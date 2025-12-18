@@ -48,6 +48,70 @@
     }
 }
 
+/* Manual Mode Overrides */
+.light-mode {
+    --color-bg-body: #FFFFFF;
+    --color-bg-card: #FFFFFF;
+    --color-text-main: #1B2C5D;
+    --color-text-secondary: #625D5F;
+    --color-border: #DED3BD;
+    --color-shadow: rgba(0, 0, 0, 0.1);
+
+    --color-input-bg: #FFFFFF;
+    --color-input-text: #1B2C5D;
+    --color-input-border: #DED3BD;
+
+    --color-table-header-bg: #f2f2f2;
+    --color-table-border: #ddd;
+}
+
+.dark-mode {
+    --color-bg-body: #1a1a1a;
+    --color-bg-card: #2c2c2c;
+    --color-text-main: #DED3BD;
+    --color-text-secondary: #cccccc;
+    --color-border: #625D5F;
+    --color-shadow: rgba(0, 0, 0, 0.5);
+
+    --color-input-bg: #333333;
+    --color-input-text: #FFFFFF;
+    --color-input-border: #625D5F;
+
+    --color-table-header-bg: #333333;
+    --color-table-border: #444444;
+}
+
+/* Theme Toggle Button */
+.btn-theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--color-primary-red);
+    color: #FFFFFF;
+    border: none;
+    box-shadow: 0 4px 6px var(--color-shadow);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1000;
+    transition: background-color 0.3s ease, transform 0.2s;
+    margin: 0; /* Reset global btn margin */
+}
+
+.btn-theme-toggle:hover {
+    background-color: #a01a2a;
+    transform: scale(1.1);
+}
+
+.btn-theme-toggle .icon {
+    font-size: 1.5em;
+    line-height: 1;
+}
+
 /* Global Styles */
 body {
     font-family: 'Fira Sans', sans-serif;

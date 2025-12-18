@@ -56,4 +56,76 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    // Task 2: Manual Dark/Light Mode Toggle
+    const toggleButton = document.getElementById('theme-toggle');
+    const logo = document.getElementById('logo');
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function applyTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        const isDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark.matches);
+
+        // Apply classes to body
+        if (savedTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.body.classList.remove('light-mode');
+        } else if (savedTheme === 'light') {
+            document.body.classList.add('light-mode');
+            document.body.classList.remove('dark-mode');
+        } else {
+            // System default: remove manual classes
+            document.body.classList.remove('dark-mode');
+            document.body.classList.remove('light-mode');
+        }
+
+        // Update Logo and Button Icon
+        updateVisuals(isDark);
+    }
+
+    function updateVisuals(isDark) {
+        if (logo) {
+            // Ensure logo src is updated based on the effective theme
+            const logoPath = isDark ? '/static/images/logo-dark.png' : '/static/images/logo-light.png';
+            logo.src = logoPath;
+        }
+
+        if (toggleButton) {
+            const iconSpan = toggleButton.querySelector('.icon');
+            if (iconSpan) {
+                iconSpan.textContent = isDark ? '🌙' : '☀️';
+            }
+        }
+    }
+
+    function toggleTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        let newTheme;
+
+        if (savedTheme) {
+            // If already manual, switch to the other
+            newTheme = savedTheme === 'dark' ? 'light' : 'dark';
+        } else {
+            // If system, switch to the opposite of system
+            newTheme = systemPrefersDark.matches ? 'light' : 'dark';
+        }
+
+        localStorage.setItem('theme', newTheme);
+        applyTheme();
+    }
+
+    // Initial Application
+    applyTheme();
+
+    // Event Listener for Toggle Button
+    if (toggleButton) {
+        toggleButton.addEventListener('click', toggleTheme);
+    }
+
+    // Listen for System Preference Changes (only affects if no manual override)
+    systemPrefersDark.addEventListener('change', () => {
+        if (!localStorage.getItem('theme')) {
+            applyTheme();
+        }
+    });
 });
