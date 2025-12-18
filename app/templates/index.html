@@ -8,26 +8,31 @@
     <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png"> <!-- Adiciona o favicon -->
 </head>
 <body>
-    <a href="{{ url_for('main.index') }}">
-        <img src="{{ url_for('static', filename='logo.svg') }}" alt="Logo" class="logo">
-    </a>
-    <h1>Bem-vindo ao Espaço Café EBM</h1>
-    <form id="officeForm" method="POST" action="{{ url_for('main.select_room') }}">
-        <label for="office">Escritório:</label>
-        <select id="office" name="office" required>
-            <option value="">Selecione um Escritório</option>
-            {% for office in offices %}
-            <option value="{{ office }}">{{ office }}</option>
-            {% endfor %}
-        </select>
+    <div class="card" style="max-width: 600px; padding: 40px; margin: 20px;">
+        <a href="{{ url_for('main.index') }}">
+            <picture>
+                <source srcset="{{ url_for('static', filename='images/logo-dark.png') }}" media="(prefers-color-scheme: dark)">
+                <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Logo" class="logo">
+            </picture>
+        </a>
+        <h1>Bem-vindo ao Espaço Café EBM</h1>
+        <form id="officeForm" method="POST" action="{{ url_for('main.select_room') }}" style="box-shadow: none; padding: 0; width: 100%;">
+            <label for="office">Escritório:</label>
+            <select id="office" name="office" required class="form-control">
+                <option value="">Selecione um Escritório</option>
+                {% for office in offices %}
+                <option value="{{ office }}">{{ office }}</option>
+                {% endfor %}
+            </select>
 
-        <label for="room">Sala:</label>
-        <select id="room" name="room" required>
-            <option value="">Selecione uma Sala</option>
-        </select>
+            <label for="room">Sala:</label>
+            <select id="room" name="room" required class="form-control">
+                <option value="">Selecione uma Sala</option>
+            </select>
 
-        <input type="submit" value="Avançar">
-    </form>
+            <input type="submit" value="Avançar" class="btn btn-primary">
+        </form>
+    </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
