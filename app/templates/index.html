@@ -8,12 +8,14 @@
     <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png"> <!-- Adiciona o favicon -->
 </head>
 <body>
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle" class="btn-theme-toggle" aria-label="Toggle Theme">
+        <span class="icon">☀️</span>
+    </button>
+
     <div class="card" style="max-width: 600px; padding: 40px; margin: 20px;">
         <a href="{{ url_for('main.index') }}">
-            <picture>
-                <source srcset="{{ url_for('static', filename='images/logo-dark.png') }}" media="(prefers-color-scheme: dark)">
-                <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Logo" class="logo">
-            </picture>
+            <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Logo" class="logo" id="logo">
         </a>
         <h1>Bem-vindo ao Espaço Café EBM</h1>
         <form id="officeForm" method="POST" action="{{ url_for('main.select_room') }}" style="box-shadow: none; padding: 0; width: 100%;">
