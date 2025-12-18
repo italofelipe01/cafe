@@ -9,10 +9,13 @@ This is a Flask application for managing coffee and service requests for meeting
 ├── app/
 │   ├── __init__.py    # Application factory
 │   ├── routes.py      # Route definitions
+│   ├── extensions.py  # Flsk-SQlite converter
+│   ├── models.py      # Database definitions
 │   ├── static/        # Static files (CSS, JS, images)
 │   └── templates/     # HTML templates
 ├── config.py          # Configuration settings
 ├── requirements.txt   # Project dependencies
+├── .gitignore         # Gitignore dependencies
 ├── run.py             # Entry point
 └── tests/             # Unit tests
 ```
