@@ -8,25 +8,43 @@
     <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png"> <!-- Adiciona o favicon -->
 </head>
 <body>
-    <a href="{{ url_for('main.index') }}">
-        <img src="{{ url_for('static', filename='logo.svg') }}" alt="Logo" class="logo">
-    </a>
-    <h1>Pedido solicitado com sucesso!</h1>
+    <div class="card" style="max-width: 600px; padding: 0; overflow: hidden; margin: 20px;">
+        <!-- Logo inside the card, at the top -->
+        <div style="padding: 20px; text-align: center;">
+            <a href="{{ url_for('main.index') }}">
+                <picture>
+                    <source srcset="{{ url_for('static', filename='images/logo-dark.png') }}" media="(prefers-color-scheme: dark)">
+                    <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Logo" class="logo" style="margin-bottom: 0;">
+                </picture>
+            </a>
+        </div>
 
-    <p><strong>Escritório:</strong> {{ office }}</p>
-    <p><strong>Sala:</strong> {{ room }}</p>
+        <!-- Success Header -->
+        <div class="success-box" style="margin-bottom: 0; border-radius: 0; background-color: var(--color-success);">
+             <h1>Pedido solicitado com sucesso!</h1>
+        </div>
 
-    <h2>Itens solicitados:</h2>
-    <ul>
-        <li>Café expresso sem açúcar: {{ cafe_expresso_sem_acucar }}</li>
-        <li>Café expresso com açúcar: {{ cafe_expresso_com_acucar }}</li>
-        <li>Café expresso com adoçante: {{ cafe_expresso_com_adocante }}</li>
-        <li>Café tradicional sem açúcar: {{ cafe_tradicional_sem_acucar }}</li>
-        <li>Café tradicional com açúcar: {{ cafe_tradicional_com_acucar }}</li>
-        <li>Café tradicional com adoçante: {{ cafe_tradicional_com_adocante }}</li>
-        <li>Copo: {{ copo }}</li>
-        <li>Jarra de água: {{ jarra_agua }}</li>
-        <li>Limpeza da Sala: {{ limpeza_sala }}</li>
-    </ul>
+        <div style="padding: 30px;">
+            <p style="text-align: center; margin-top: 0;">
+                <strong>Escritório:</strong> {{ office }}<br>
+                <strong>Sala:</strong> {{ room }}
+            </p>
+
+            <h2 style="font-size: 1.2em; border-bottom: 1px solid var(--color-border); padding-bottom: 10px; margin-top: 20px;">Itens solicitados:</h2>
+            <ul class="summary-list">
+                {% if cafe_expresso_sem_acucar|int > 0 %}<li><span>Café expresso sem açúcar</span> <strong>{{ cafe_expresso_sem_acucar }}</strong></li>{% endif %}
+                {% if cafe_expresso_com_acucar|int > 0 %}<li><span>Café expresso com açúcar</span> <strong>{{ cafe_expresso_com_acucar }}</strong></li>{% endif %}
+                {% if cafe_expresso_com_adocante|int > 0 %}<li><span>Café expresso com adoçante</span> <strong>{{ cafe_expresso_com_adocante }}</strong></li>{% endif %}
+                {% if cafe_tradicional_sem_acucar|int > 0 %}<li><span>Café tradicional sem açúcar</span> <strong>{{ cafe_tradicional_sem_acucar }}</strong></li>{% endif %}
+                {% if cafe_tradicional_com_acucar|int > 0 %}<li><span>Café tradicional com açúcar</span> <strong>{{ cafe_tradicional_com_acucar }}</strong></li>{% endif %}
+                {% if cafe_tradicional_com_adocante|int > 0 %}<li><span>Café tradicional com adoçante</span> <strong>{{ cafe_tradicional_com_adocante }}</strong></li>{% endif %}
+                {% if copo|int > 0 %}<li><span>Copo</span> <strong>{{ copo }}</strong></li>{% endif %}
+                {% if jarra_agua|int > 0 %}<li><span>Jarra de água</span> <strong>{{ jarra_agua }}</strong></li>{% endif %}
+                {% if limpeza_sala == 'Sim' %}<li><span>Limpeza da Sala</span> <strong>Sim</strong></li>{% endif %}
+            </ul>
+
+            <a href="{{ url_for('main.index') }}" class="btn btn-secondary" style="display: block; width: 100%; margin-top: 30px;">Voltar ao Início</a>
+        </div>
+    </div>
 </body>
 </html>

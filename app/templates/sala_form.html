@@ -8,86 +8,90 @@
     <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png"> <!-- Adiciona o favicon -->
 </head>
 <body>
-    <a href="{{ url_for('main.index') }}">
-        <img src="{{ url_for('static', filename='logo.svg') }}" alt="Logo" class="logo">
-    </a>
-    <h1>Você escolheu:</h1>
-    <p>Escritório: {{ office }}</p>
-    <p>Sala: {{ room }}</p>
+    <div class="card" style="max-width: 800px; padding: 20px; margin: 20px auto;">
+        <a href="{{ url_for('main.index') }}">
+            <picture>
+                <source srcset="{{ url_for('static', filename='images/logo-dark.png') }}" media="(prefers-color-scheme: dark)">
+                <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Logo" class="logo">
+            </picture>
+        </a>
+        <h1>Você escolheu:</h1>
+        <p style="text-align: center;">Escritório: <strong>{{ office }}</strong> | Sala: <strong>{{ room }}</strong></p>
 
-    <!-- Formulário com a tabela -->
-    <form action="/submit_form" method="POST">
-        <input type="hidden" name="office" value="{{ office }}">
-        <input type="hidden" name="room" value="{{ room }}">
-        <table>
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Para quantas pessoas?</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Café expresso sem açúcar</td>
-                    <td>
-                        <input type="number" id="cafe_expresso_qty1" name="Café expresso sem açucar" min="0" max="1000" value="0">
-                    </td>
-                </tr>
-                <tr>
-                    <td>Café expresso com açúcar</td>
-                    <td>
-                        <input type="number" id="cafe_expresso_qty2" name="Café expresso com açucar" min="0" max="1000" value="0">
-                    </td>
-                </tr>
-                <tr>
-                    <td>Café expresso com adoçante</td>
-                    <td>
-                        <input type="number" id="cafe_expresso_qty3" name="Café expresso com adoçante" min="0" max="1000" value="0">
-                    </td>
-                </tr>                
-                <tr>
-                    <td>Café tradicional sem açúcar</td>
-                    <td>
-                        <input type="number" id="cafe_tradicional_qty" name="Café tradicional sem açucar" min="0" max="1000" value="0">
-                    </td>
-                </tr>
-                <tr>
-                    <td>Café tradicional com açúcar</td>
-                    <td>
-                        <input type="number" id="cafe_tradicional_qty1" name="Café tradicional com açucar" min="0" max="1000" value="0">
-                    </td>
-                </tr>
-                <tr>
-                    <td>Café tradicional com adoçante</td>
-                    <td>
-                        <input type="number" id="cafe_tradicional_qty2" name="Café tradicional com adoçante" min="0" max="1000" value="0">
-                    </td>
-                </tr>
-                <tr>
-                    <td>Copo</td>
-                    <td>
-                        <input type="number" name="Copo" min="0" max="1000" value="0">
-                    </td>
-                </tr>
-                <tr>
-                    <td>Jarra de água</td>
-                    <td>
-                        <input type="number" name="Jarra de água" min="0" max="1000" value="0">
-                    </td>
-                </tr>
-                <tr>
-                    <td>Limpeza da Sala</td>
-                    <td>
-                        <select name="Limpeza da Sala">
-                            <option value="Não">Não</option>                            
-                            <option value="Sim">Sim</option>
-                        </select>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        <input type="submit" value="Enviar">
-    </form>
+        <!-- Formulário com a tabela -->
+        <form action="/submit_form" method="POST" style="box-shadow: none; padding: 0; width: 100%; max-width: 100%;">
+            <input type="hidden" name="office" value="{{ office }}">
+            <input type="hidden" name="room" value="{{ room }}">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Quantidade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td data-label="Item">Café expresso sem açúcar</td>
+                        <td data-label="Quantidade">
+                            <input type="number" id="cafe_expresso_qty1" name="Café expresso sem açucar" min="0" max="1000" value="0" class="form-control">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td data-label="Item">Café expresso com açúcar</td>
+                        <td data-label="Quantidade">
+                            <input type="number" id="cafe_expresso_qty2" name="Café expresso com açucar" min="0" max="1000" value="0" class="form-control">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td data-label="Item">Café expresso com adoçante</td>
+                        <td data-label="Quantidade">
+                            <input type="number" id="cafe_expresso_qty3" name="Café expresso com adoçante" min="0" max="1000" value="0" class="form-control">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td data-label="Item">Café tradicional sem açúcar</td>
+                        <td data-label="Quantidade">
+                            <input type="number" id="cafe_tradicional_qty" name="Café tradicional sem açucar" min="0" max="1000" value="0" class="form-control">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td data-label="Item">Café tradicional com açúcar</td>
+                        <td data-label="Quantidade">
+                            <input type="number" id="cafe_tradicional_qty1" name="Café tradicional com açucar" min="0" max="1000" value="0" class="form-control">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td data-label="Item">Café tradicional com adoçante</td>
+                        <td data-label="Quantidade">
+                            <input type="number" id="cafe_tradicional_qty2" name="Café tradicional com adoçante" min="0" max="1000" value="0" class="form-control">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td data-label="Item">Copo</td>
+                        <td data-label="Quantidade">
+                            <input type="number" name="Copo" min="0" max="1000" value="0" class="form-control">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td data-label="Item">Jarra de água</td>
+                        <td data-label="Quantidade">
+                            <input type="number" name="Jarra de água" min="0" max="1000" value="0" class="form-control">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td data-label="Item">Limpeza da Sala</td>
+                        <td data-label="Quantidade">
+                            <select name="Limpeza da Sala" class="form-control">
+                                <option value="Não">Não</option>
+                                <option value="Sim">Sim</option>
+                            </select>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <input type="submit" value="Enviar" class="btn btn-primary" style="margin-top: 30px;">
+        </form>
+    </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
