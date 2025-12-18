@@ -1,6 +1,6 @@
 # Coffee Request App
 
-This is a simple Flask application for requesting coffee and other services for meeting rooms in various offices.
+This is a Flask application for managing coffee and service requests for meeting rooms across various offices.
 
 ## Project Structure
 
@@ -25,7 +25,7 @@ This is a simple Flask application for requesting coffee and other services for 
     cd <repository_directory>
     ```
 
-2.  **Create a virtual environment (optional but recommended):**
+2.  **Create a virtual environment (recommended):**
     ```bash
     python -m venv venv
     source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -36,15 +36,62 @@ This is a simple Flask application for requesting coffee and other services for 
     pip install -r requirements.txt
     ```
 
-## Running the Application
+## Development Mode
 
-To run the application, execute the `run.py` script:
+To run the application in development mode (with debug features enabled and auto-reloading):
 
+**Linux/macOS:**
 ```bash
+export DEBUG=True
+python run.py
+```
+
+**Windows (CMD):**
+```bash
+set DEBUG=True
+python run.py
+```
+
+**Windows (PowerShell):**
+```powershell
+$env:DEBUG="True"
 python run.py
 ```
 
 The application will start on `http://127.0.0.1:5000/`.
+
+## Production Mode
+
+For production environments, follow these steps:
+
+1.  **Disable Debug Mode:**
+    Ensure `DEBUG` environment variable is NOT set to `True`. The application defaults to `DEBUG=False` if the variable is missing.
+
+2.  **Set Secret Key:**
+    Set a strong `SECRET_KEY` environment variable to secure sessions.
+    ```bash
+    export SECRET_KEY='your-strong-random-secret-key'
+    ```
+
+3.  **Database:**
+    By default, SQLite is used. For production, you can set `DATABASE_URL` to point to a production database (e.g., PostgreSQL).
+    ```bash
+    export DATABASE_URL='postgresql://user:password@localhost/dbname'
+    ```
+
+4.  **Use a WSGI Server:**
+    Do not use the built-in development server (`python run.py`) in production. Instead, use a production WSGI server like **Gunicorn**.
+
+    First, install Gunicorn:
+    ```bash
+    pip install gunicorn
+    ```
+
+    Then run the application:
+    ```bash
+    gunicorn -w 4 -b 0.0.0.0:8000 run:app
+    ```
+    This will start the server with 4 workers on port 8000.
 
 ## Usage
 
