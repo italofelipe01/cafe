@@ -8,9 +8,9 @@ offices = {
                            'Sala Metropolitan', 'Sala Nasa', 'Sala Uber',
                            'Sala Walk', 'Studio'],
     'EBM Office Campinas': ['Sala Smart Cambuí', 'Sala Wish Taquaral'],
-    'EBM Espaço Goinânia': ['Auditório', 'Long Wide (Primeiro Andar)', 'Lounge Wish',
-                            'Relacionamento 1', 'Relacionamento 2', 'Relacionamento 3',
-                            'Sala Kazas', 'Sala Metropolitan0', 'Sala Smart',
+    'EBM Espaço Goiânia': ['Auditório', 'Long Wide (Primeiro Andar)', 'Lounge Wish',
+                           'Relacionamento 1', 'Relacionamento 2', 'Relacionamento 3',
+                           'Sala Kazas', 'Sala Metropolitan', 'Sala Smart',
                             'Sala The Sun', 'Sala Vinhas', 'Sala Wish',
                             'Sala Wish Areião', 'Sala Wish Trinta e Sete', 'Sala Wish Vaca Brava',
                             'Wide']
