@@ -8,14 +8,16 @@
     <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png"> <!-- Adiciona o favicon -->
 </head>
 <body>
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle" class="btn-theme-toggle" aria-label="Toggle Theme">
+        <span class="icon">☀️</span>
+    </button>
+
     <div class="card" style="max-width: 600px; padding: 0; overflow: hidden; margin: 20px;">
         <!-- Logo inside the card, at the top -->
         <div style="padding: 20px; text-align: center;">
             <a href="{{ url_for('main.index') }}">
-                <picture>
-                    <source srcset="{{ url_for('static', filename='images/logo-dark.png') }}" media="(prefers-color-scheme: dark)">
-                    <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Logo" class="logo" style="margin-bottom: 0;">
-                </picture>
+                <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Logo" class="logo" style="margin-bottom: 0;" id="logo">
             </a>
         </div>
 
@@ -46,5 +48,7 @@
             <a href="{{ url_for('main.index') }}" class="btn btn-secondary" style="display: block; width: 100%; margin-top: 30px;">Voltar ao Início</a>
         </div>
     </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
