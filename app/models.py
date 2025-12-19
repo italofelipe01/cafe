@@ -1,6 +1,16 @@
 from datetime import datetime
 from app.extensions import db
 
+class Office(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True, nullable=False)
+    spaces = db.relationship('Space', backref='office', lazy=True)
+
+class Space(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    office_id = db.Column(db.Integer, db.ForeignKey('office.id'), nullable=False)
+
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     office = db.Column(db.String(100), nullable=False)
@@ -19,6 +29,25 @@ class Order(db.Model):
     copo = db.Column(db.Integer, default=0)
     jarra_agua = db.Column(db.Integer, default=0)
     limpeza_sala = db.Column(db.String(10), default='Não')
+
+    def __init__(self, office, room, date_created, time_created,
+                 cafe_expresso_sem_acucar=0, cafe_expresso_com_acucar=0, cafe_expresso_com_adocante=0,
+                 cafe_tradicional_sem_acucar=0, cafe_tradicional_com_acucar=0, cafe_tradicional_com_adocante=0,
+                 copo=0, jarra_agua=0, limpeza_sala='Não', status='Pending'):
+        self.office = office
+        self.room = room
+        self.date_created = date_created
+        self.time_created = time_created
+        self.cafe_expresso_sem_acucar = cafe_expresso_sem_acucar
+        self.cafe_expresso_com_acucar = cafe_expresso_com_acucar
+        self.cafe_expresso_com_adocante = cafe_expresso_com_adocante
+        self.cafe_tradicional_sem_acucar = cafe_tradicional_sem_acucar
+        self.cafe_tradicional_com_acucar = cafe_tradicional_com_acucar
+        self.cafe_tradicional_com_adocante = cafe_tradicional_com_adocante
+        self.copo = copo
+        self.jarra_agua = jarra_agua
+        self.limpeza_sala = limpeza_sala
+        self.status = status
 
     def to_dict(self):
         return {
