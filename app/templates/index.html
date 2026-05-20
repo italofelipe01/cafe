@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espaço café EBM</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png"> <!-- Adiciona o favicon -->
+</head>
+<body>
+    <!-- Theme Toggle Button -->
+    <button id="theme-toggle" class="btn-theme-toggle" aria-label="Toggle Theme">
+        <span class="icon">☀️</span>
+    </button>
+
+    <div class="card" style="max-width: 600px; padding: 40px; margin: 20px;">
+        <a href="{{ url_for('main.index') }}">
+            <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Logo" class="logo" id="logo">
+        </a>
+        <h1>Bem-vindo ao Espaço Café EBM</h1>
+        <form id="officeForm" method="POST" action="{{ url_for('main.select_room') }}" style="box-shadow: none; padding: 0; width: 100%;">
+            <label for="office">Escritório:</label>
+            <select id="office" name="office" required class="form-control">
+                <option value="">Selecione um Escritório</option>
+                {% for office in offices %}
+                <option value="{{ office }}">{{ office }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="room">Sala:</label>
+            <select id="room" name="room" required class="form-control">
+                <option value="">Selecione uma Sala</option>
+            </select>
+
+            <input type="submit" value="Avançar" class="btn btn-primary">
+        </form>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

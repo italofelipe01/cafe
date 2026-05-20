@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Copa Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png"> <!-- Adiciona o favicon -->
+</head>
+<body>
+
+    <h1>Pedidos na Copa</h1>
+
+    <div id="orders-container" class="orders-container">
+        <!-- Orders will be injected here -->
+        <p class="empty-message">Carregando pedidos...</p>
+    </div>
+
+    <script>
+        let knownOrderIds = new Set();
+        const notificationSound = new Audio("{{ url_for('static', filename='alert.mp3') }}");
+        let isFirstRun = true;
+
+        async function fetchOrders() {
+            try {
+                const response = await fetch('/api/orders');
+                const orders = await response.json();
+                renderOrders(orders);
+                checkNewOrders(orders);
+            } catch (error) {
+                console.error('Error fetching orders:', error);
+            }
+        }
+
+        function renderOrders(orders) {
+            const container = document.getElementById('orders-container');
+            container.innerHTML = '';
+
+            if (orders.length === 0) {
+                container.innerHTML = '<p class="empty-message">Nenhum pedido pendente.</p>';
+                return;
+            }
+
+            orders.forEach(order => {
+                const card = document.createElement('div');
+                card.className = 'order-card';
+
+                let itemsHtml = '';
+                for (const [item, quantity] of Object.entries(order.items)) {
+                    if (quantity > 0 || quantity === 'Sim') {
+                         // Filter out "Não"
+                         if (quantity === 'Não' || quantity === 0) continue;
+
+                         itemsHtml += `<li><span>${item}</span> <span>${quantity}</span></li>`;
+                    }
+                }
+
+                card.innerHTML = `
+                    <div class="order-header">
+                        <h2>${order.room}</h2>
+                        <span>${order.office}</span><br>
+                        <small>${order.date} - ${order.time}</small>
+                    </div>
+                    <ul class="order-items">
+                        ${itemsHtml}
+                    </ul>
+                    <button class="btn-concluir" onclick="completeOrder(${order.id})">Concluir</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function checkNewOrders(orders) {
+            let hasNew = false;
+            orders.forEach(order => {
+                if (!knownOrderIds.has(order.id)) {
+                    knownOrderIds.add(order.id);
+                    hasNew = true;
+                }
+            });
+
+            if (hasNew && knownOrderIds.size > 0) {
+                 if (isFirstRun) {
+                     isFirstRun = false;
+                 } else {
+                     notificationSound.play().catch(e => console.log("Audio play failed:", e));
+                 }
+            } else {
+                if (isFirstRun && orders.length === 0) isFirstRun = false;
+            }
+        }
+
+        async function completeOrder(orderId) {
+            if (!confirm('Marcar pedido como concluído?')) return;
+
+            try {
+                const response = await fetch(`/api/complete_order/${orderId}`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+                if (result.success) {
+                    knownOrderIds.delete(orderId);
+                    fetchOrders(); // Refresh immediately
+                }
+            } catch (error) {
+                console.error('Error completing order:', error);
+            }
+        }
+
+        // Poll every 10 seconds
+        setInterval(fetchOrders, 10000);
+
+        // Initial fetch
+        fetchOrders();
+
+    </script>
+</body>
+</html>

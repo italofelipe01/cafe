@@ -1,0 +1,416 @@
+/* Global CSS with Brand Guidelines */
+
+/* Import Fira Sans as alternative to Fedra Sans */
+@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap');
+
+:root {
+    /* Brand Colors */
+    --color-primary-blue: #1B2C5D; /* Dark Blue */
+    --color-primary-red: #C12033; /* Red */
+    --color-beige: #DED3BD; /* Beige */
+    --color-gray: #625D5F; /* Gray */
+    --color-success: #27ae60; /* Success Green */
+
+    /* Theme Colors - Light Mode (Default) */
+    --color-bg-body: #FFFFFF;
+    --color-bg-card: #FFFFFF;
+    --color-text-main: #1B2C5D; /* Blue text */
+    --color-text-secondary: #625D5F; /* Gray text */
+    --color-border: #DED3BD; /* Beige border */
+    --color-shadow: rgba(0, 0, 0, 0.1);
+
+    /* Input Colors */
+    --color-input-bg: #FFFFFF;
+    --color-input-text: #1B2C5D;
+    --color-input-border: #DED3BD;
+
+    /* Table Colors */
+    --color-table-header-bg: #f2f2f2;
+    --color-table-border: #ddd;
+}
+
+/* Dark Mode Overrides */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-bg-body: #1a1a1a; /* Dark Charcoal */
+        --color-bg-card: #2c2c2c; /* Slightly lighter dark for cards */
+        --color-text-main: #DED3BD; /* Beige text */
+        --color-text-secondary: #cccccc; /* Light gray text */
+        --color-border: #625D5F; /* Brand Gray border */
+        --color-shadow: rgba(0, 0, 0, 0.5);
+
+        --color-input-bg: #333333;
+        --color-input-text: #FFFFFF;
+        --color-input-border: #625D5F;
+
+        --color-table-header-bg: #333333;
+        --color-table-border: #444444;
+    }
+}
+
+/* Manual Mode Overrides */
+.light-mode {
+    --color-bg-body: #FFFFFF;
+    --color-bg-card: #FFFFFF;
+    --color-text-main: #1B2C5D;
+    --color-text-secondary: #625D5F;
+    --color-border: #DED3BD;
+    --color-shadow: rgba(0, 0, 0, 0.1);
+
+    --color-input-bg: #FFFFFF;
+    --color-input-text: #1B2C5D;
+    --color-input-border: #DED3BD;
+
+    --color-table-header-bg: #f2f2f2;
+    --color-table-border: #ddd;
+}
+
+.dark-mode {
+    --color-bg-body: #1a1a1a;
+    --color-bg-card: #2c2c2c;
+    --color-text-main: #DED3BD;
+    --color-text-secondary: #cccccc;
+    --color-border: #625D5F;
+    --color-shadow: rgba(0, 0, 0, 0.5);
+
+    --color-input-bg: #333333;
+    --color-input-text: #FFFFFF;
+    --color-input-border: #625D5F;
+
+    --color-table-header-bg: #333333;
+    --color-table-border: #444444;
+}
+
+/* Theme Toggle Button */
+.btn-theme-toggle {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--color-primary-red);
+    color: #FFFFFF;
+    border: none;
+    box-shadow: 0 4px 6px var(--color-shadow);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1000;
+    transition: background-color 0.3s ease, transform 0.2s;
+    margin: 0; /* Reset global btn margin */
+}
+
+.btn-theme-toggle:hover {
+    background-color: #a01a2a;
+    transform: scale(1.1);
+}
+
+.btn-theme-toggle .icon {
+    font-size: 1.5em;
+    line-height: 1;
+}
+
+/* Global Styles */
+body {
+    font-family: 'Fira Sans', sans-serif;
+    background-color: var(--color-bg-body);
+    color: var(--color-text-main);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Fira Sans', sans-serif;
+    color: var(--color-text-main);
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+p, span, div, label, li, td, th {
+    font-family: 'Fira Sans', sans-serif;
+}
+
+a {
+    text-decoration: none;
+}
+
+/* Layout & Containers */
+.container {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.logo {
+    display: block;
+    margin: 0 auto 20px auto;
+    width: 200px;
+    height: auto;
+}
+
+/* Card Component */
+.card {
+    background-color: var(--color-bg-card);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px var(--color-shadow);
+    border: 1px solid var(--color-border);
+    margin-bottom: 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.success-box {
+    background-color: var(--color-primary-blue);
+    color: #FFFFFF;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.success-box h1 {
+    color: #FFFFFF;
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.summary-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.summary-list li {
+    padding: 10px;
+    border-bottom: 1px solid var(--color-border);
+    display: flex;
+    justify-content: space-between;
+}
+
+.summary-list li:last-child {
+    border-bottom: none;
+}
+
+/* Form Styles */
+form {
+    background-color: var(--color-bg-card);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px var(--color-shadow);
+    width: 90%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+label {
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: var(--color-text-main);
+}
+
+/* Input Component */
+.form-control,
+input[type="text"],
+input[type="number"],
+select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid var(--color-input-border);
+    border-radius: 4px;
+    background-color: var(--color-input-bg);
+    color: var(--color-input-text);
+    font-family: 'Fira Sans', sans-serif;
+    font-size: 1rem;
+    box-sizing: border-box;
+}
+
+/* Button Component */
+.btn,
+input[type="submit"],
+button {
+    display: inline-block;
+    padding: 12px 24px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Fira Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    transition: background-color 0.3s ease;
+    width: 100%; /* Default to full width for submit buttons based on old styles */
+    box-sizing: border-box;
+}
+
+.btn-primary,
+input[type="submit"] {
+    background-color: var(--color-primary-blue);
+    color: #FFFFFF;
+}
+
+.btn-primary:hover,
+input[type="submit"]:hover {
+    background-color: #15224a; /* Darker shade of primary blue */
+}
+
+.btn-secondary {
+    background-color: var(--color-primary-red);
+    color: #FFFFFF;
+}
+
+.btn-secondary:hover {
+    background-color: #a01a2a; /* Darker shade of primary red */
+}
+
+/* Table Styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    color: var(--color-text-main);
+}
+
+th, td {
+    border: 1px solid var(--color-table-border);
+    padding: 12px;
+    text-align: left;
+}
+
+th {
+    background-color: var(--color-table-header-bg);
+    font-weight: 700;
+}
+
+/* Responsive Table */
+@media screen and (max-width: 600px) {
+    table {
+        border: 0;
+    }
+
+    table thead {
+        border: none;
+        clip: rect(0 0 0 0);
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        padding: 0;
+        position: absolute;
+        width: 1px;
+    }
+
+    table tr {
+        border-bottom: 3px solid var(--color-border);
+        display: block;
+        margin-bottom: 20px;
+        background-color: var(--color-bg-card);
+    }
+
+    table td {
+        border-bottom: 1px solid var(--color-table-border);
+        display: block;
+        font-size: .8em;
+        text-align: right;
+        padding: 10px;
+        position: relative;
+    }
+
+    table td::before {
+        content: attr(data-label);
+        float: left;
+        font-weight: bold;
+        text-transform: uppercase;
+        color: var(--color-text-main);
+    }
+
+    table td:last-child {
+        border-bottom: 0;
+    }
+
+    /* Adjust inputs in responsive view */
+    table td input[type="number"],
+    table td select {
+        width: 50%;
+        display: inline-block;
+    }
+}
+
+/* Dashboard Specifics */
+.orders-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.order-card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    box-shadow: 0 4px 6px var(--color-shadow);
+    padding: 20px;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+}
+
+.order-header {
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.order-header h2 {
+    margin: 0;
+    font-size: 1.2em;
+    color: var(--color-primary-red); /* Highlight room/title */
+    text-align: left;
+}
+
+.order-header span {
+    font-size: 0.9em;
+    color: var(--color-text-secondary);
+}
+
+.order-items {
+    flex-grow: 1;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.order-items li {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    color: var(--color-text-main);
+}
+
+.btn-concluir {
+    background-color: var(--color-success); /* Use variable */
+    color: white;
+    width: 100%;
+}
+
+.btn-concluir:hover {
+    background-color: #2ecc71;
+}
+
+.empty-message {
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-style: italic;
+    width: 100%;
+}
