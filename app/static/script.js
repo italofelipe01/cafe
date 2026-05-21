@@ -136,6 +136,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function animateThemeShift() {
+        if (reducedMotion) return;
+        document.body.classList.remove('theme-shift');
+        void document.body.offsetWidth;
+        document.body.classList.add('theme-shift');
+        window.setTimeout(() => {
+            document.body.classList.remove('theme-shift');
+        }, 220);
+    }
+
     function toggleTheme() {
         const savedTheme = localStorage.getItem('theme');
         let newTheme;
@@ -150,6 +160,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         localStorage.setItem('theme', newTheme);
         applyTheme();
+        animateThemeShift();
     }
 
     // Initial Application

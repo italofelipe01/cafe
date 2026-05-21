@@ -150,6 +150,11 @@ body.page-exit main {
     pointer-events: none;
 }
 
+body.theme-shift .site-header,
+body.theme-shift main {
+    animation: themeSlide 180ms ease-out both;
+}
+
 @keyframes pageSlideIn {
     from {
         opacity: 0;
@@ -172,11 +177,24 @@ body.page-exit main {
     }
 }
 
+@keyframes themeSlide {
+    from {
+        opacity: 0.86;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     body.page-enter .site-header,
     body.page-enter main,
     body.page-exit .site-header,
-    body.page-exit main {
+    body.page-exit main,
+    body.theme-shift .site-header,
+    body.theme-shift main {
         animation: none;
     }
 }
