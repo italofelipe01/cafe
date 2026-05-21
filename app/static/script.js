@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (officeSelect) {
         officeSelect.addEventListener('change', function () {
             const selectedOffice = officeSelect.value;
+            roomSelect.innerHTML = '<option value="">Carregando salas...</option>';
+            roomSelect.disabled = true;
 
             if (selectedOffice) {
                 fetch('/get_rooms', {
@@ -17,16 +19,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 })
                 .then(response => response.json())
                 .then(rooms => {
-                    roomSelect.innerHTML = '<option value="">Selecione uma Sala</option>';
+                    roomSelect.innerHTML = '<option value="">Selecione uma sala</option>';
                     rooms.forEach(room => {
                         const option = document.createElement('option');
                         option.value = room;
                         option.textContent = room;
                         roomSelect.appendChild(option);
                     });
+                    roomSelect.disabled = rooms.length === 0;
+                })
+                .catch(() => {
+                    roomSelect.innerHTML = '<option value="">Erro ao carregar salas</option>';
                 });
             } else {
-                roomSelect.innerHTML = '<option value="">Selecione uma Sala</option>';
+                roomSelect.innerHTML = '<option value="">Selecione uma sala</option>';
+                roomSelect.disabled = true;
             }
         });
     }
@@ -36,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (form) {
         form.addEventListener('submit', function (e) {
             const numberInputs = form.querySelectorAll('input[type="number"]');
-            const cleaningSelect = form.querySelector('select[name="Limpeza da Sala"]');
+            const serviceSelects = form.querySelectorAll('select');
 
             let allZero = true;
 
@@ -47,10 +54,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            // Check cleaning service
-            const cleaningSelected = cleaningSelect && cleaningSelect.value === 'Sim';
+            const serviceSelected = Array.from(serviceSelects).some(select => select.value === 'Sim');
 
-            if (allZero && !cleaningSelected) {
+            if (allZero && !serviceSelected) {
                 e.preventDefault();
                 alert('Por favor, selecione pelo menos um item ou serviço.');
             }

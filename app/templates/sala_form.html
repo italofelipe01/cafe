@@ -1,100 +1,54 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escolha da Sala</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png"> <!-- Adiciona o favicon -->
-</head>
-<body>
-    <!-- Theme Toggle Button -->
-    <button id="theme-toggle" class="btn-theme-toggle" aria-label="Toggle Theme">
-        <span class="icon">☀️</span>
-    </button>
+{% extends "base.html" %}
 
-    <div class="card" style="max-width: 800px; padding: 20px; margin: 20px auto;">
-        <a href="{{ url_for('main.index') }}">
-            <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="Logo" class="logo" id="logo">
-        </a>
-        <h1>Você escolheu:</h1>
-        <p style="text-align: center;">Escritório: <strong>{{ office }}</strong> | Sala: <strong>{{ room }}</strong></p>
+{% block title %}Montar pedido | Espaço Café EBM{% endblock %}
 
-        <!-- Formulário com a tabela -->
-        <form action="/submit_form" method="POST" style="box-shadow: none; padding: 0; width: 100%; max-width: 100%;">
-            <input type="hidden" name="office" value="{{ office }}">
-            <input type="hidden" name="room" value="{{ room }}">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th>Quantidade</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td data-label="Item">Café expresso sem açúcar</td>
-                        <td data-label="Quantidade">
-                            <input type="number" id="cafe_expresso_qty1" name="Café expresso sem açucar" min="0" max="1000" value="0" class="form-control">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td data-label="Item">Café expresso com açúcar</td>
-                        <td data-label="Quantidade">
-                            <input type="number" id="cafe_expresso_qty2" name="Café expresso com açucar" min="0" max="1000" value="0" class="form-control">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td data-label="Item">Café expresso com adoçante</td>
-                        <td data-label="Quantidade">
-                            <input type="number" id="cafe_expresso_qty3" name="Café expresso com adoçante" min="0" max="1000" value="0" class="form-control">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td data-label="Item">Café tradicional sem açúcar</td>
-                        <td data-label="Quantidade">
-                            <input type="number" id="cafe_tradicional_qty" name="Café tradicional sem açucar" min="0" max="1000" value="0" class="form-control">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td data-label="Item">Café tradicional com açúcar</td>
-                        <td data-label="Quantidade">
-                            <input type="number" id="cafe_tradicional_qty1" name="Café tradicional com açucar" min="0" max="1000" value="0" class="form-control">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td data-label="Item">Café tradicional com adoçante</td>
-                        <td data-label="Quantidade">
-                            <input type="number" id="cafe_tradicional_qty2" name="Café tradicional com adoçante" min="0" max="1000" value="0" class="form-control">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td data-label="Item">Copo</td>
-                        <td data-label="Quantidade">
-                            <input type="number" name="Copo" min="0" max="1000" value="0" class="form-control">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td data-label="Item">Jarra de água</td>
-                        <td data-label="Quantidade">
-                            <input type="number" name="Jarra de água" min="0" max="1000" value="0" class="form-control">
-                        </td>
-                    </tr>
-                    <tr>
-                        <td data-label="Item">Limpeza da Sala</td>
-                        <td data-label="Quantidade">
-                            <select name="Limpeza da Sala" class="form-control">
-                                <option value="Não">Não</option>
-                                <option value="Sim">Sim</option>
-                            </select>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-            <input type="submit" value="Enviar" class="btn btn-primary" style="margin-top: 30px;">
-        </form>
+{% block content %}
+<section class="panel panel-wide">
+    <a href="{{ url_for('main.index') }}" class="brand-link" aria-label="Início">
+        <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="EBM" class="logo" id="logo">
+    </a>
+
+    <div class="page-heading">
+        <p class="eyebrow">Pedido para {{ office.name if office is defined else office_name }}</p>
+        <h1>{{ room.name if room is defined else room_name }}</h1>
     </div>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
-</body>
-</html>
+    {% if error %}
+    <div class="alert alert-error" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <form action="{{ url_for('main.submit_form') }}" method="POST" class="form-plain order-form">
+        <input type="hidden" name="office" value="{{ office.name if office is defined else office_name }}">
+        <input type="hidden" name="room" value="{{ room.name if room is defined else room_name }}">
+
+        <div class="order-grid">
+            {% for product in products %}
+            <div class="order-row">
+                <label for="{{ product.form_key }}">{{ product.name }}</label>
+                {% if product.input_type == "boolean" %}
+                <select id="{{ product.form_key }}" name="{{ product.form_key }}" class="form-control compact-control">
+                    <option value="Não">Não</option>
+                    <option value="Sim">Sim</option>
+                </select>
+                {% else %}
+                <input
+                    type="number"
+                    id="{{ product.form_key }}"
+                    name="{{ product.form_key }}"
+                    min="0"
+                    max="1000"
+                    value="0"
+                    class="form-control compact-control"
+                >
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="actions">
+            <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Voltar</a>
+            <button type="submit" class="btn btn-primary">Enviar pedido</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

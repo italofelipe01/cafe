@@ -1,7 +1,6 @@
 /* Global CSS with Brand Guidelines */
 
-/* Import Fira Sans as alternative to Fedra Sans */
-@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap');
+@import url('font/stylesheet.css');
 
 :root {
     /* Brand Colors */
@@ -114,7 +113,7 @@
 
 /* Global Styles */
 body {
-    font-family: 'Fira Sans', sans-serif;
+    font-family: "Fedra Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--color-bg-body);
     color: var(--color-text-main);
     margin: 0;
@@ -126,7 +125,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Fira Sans', sans-serif;
+    font-family: "Fedra Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: var(--color-text-main);
     text-align: center;
     margin-bottom: 20px;
@@ -134,7 +133,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 p, span, div, label, li, td, th {
-    font-family: 'Fira Sans', sans-serif;
+    font-family: "Fedra Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 a {
@@ -231,7 +230,7 @@ select {
     border-radius: 4px;
     background-color: var(--color-input-bg);
     color: var(--color-input-text);
-    font-family: 'Fira Sans', sans-serif;
+    font-family: "Fedra Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 1rem;
     box-sizing: border-box;
 }
@@ -246,7 +245,7 @@ button {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-family: 'Fira Sans', sans-serif;
+    font-family: "Fedra Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 1rem;
     font-weight: 700;
     text-align: center;
@@ -413,4 +412,242 @@ th {
     color: var(--color-text-secondary);
     font-style: italic;
     width: 100%;
+}
+
+.app-shell,
+.dashboard-shell {
+    width: 100%;
+}
+
+.app-shell {
+    display: flex;
+    justify-content: center;
+}
+
+.panel {
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 10px var(--color-shadow);
+    box-sizing: border-box;
+    margin: 20px;
+    padding: 32px;
+    width: 100%;
+}
+
+.panel-narrow {
+    max-width: 620px;
+}
+
+.panel-wide {
+    max-width: 900px;
+}
+
+.brand-link {
+    display: block;
+}
+
+.page-heading {
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.page-heading h1 {
+    margin-bottom: 8px;
+}
+
+.page-heading p {
+    color: var(--color-text-secondary);
+    margin: 0;
+}
+
+.eyebrow {
+    color: var(--color-primary-red);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    margin: 0 0 8px 0;
+    text-transform: uppercase;
+}
+
+.form-plain {
+    background: transparent;
+    box-shadow: none;
+    margin: 0;
+    max-width: none;
+    padding: 0;
+    width: 100%;
+}
+
+.alert {
+    border-radius: 6px;
+    box-sizing: border-box;
+    margin: 0 0 20px 0;
+    padding: 12px 14px;
+    width: 100%;
+}
+
+.alert-error {
+    background: rgba(193, 32, 51, 0.1);
+    border: 1px solid rgba(193, 32, 51, 0.35);
+    color: var(--color-primary-red);
+}
+
+.hidden {
+    display: none;
+}
+
+.text-link {
+    color: var(--color-primary-red);
+    display: block;
+    font-weight: 700;
+    margin-top: 18px;
+    text-align: center;
+}
+
+.order-grid {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.order-row {
+    align-items: center;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr 150px;
+    padding: 14px 16px;
+}
+
+.order-row + .order-row {
+    border-top: 1px solid var(--color-border);
+}
+
+.order-row label {
+    margin: 0;
+}
+
+.compact-control {
+    margin: 0;
+}
+
+.actions {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: 1fr 1fr;
+    margin-top: 24px;
+}
+
+.single-action {
+    grid-template-columns: 1fr;
+}
+
+.success-banner {
+    background-color: var(--color-success);
+    color: #FFFFFF;
+    margin: 0 -32px 24px -32px;
+    padding: 22px 32px;
+    text-align: center;
+}
+
+.success-banner h1,
+.success-banner .eyebrow {
+    color: #FFFFFF;
+    margin-bottom: 0;
+}
+
+.summary-meta {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.summary-meta span,
+.summary-meta small {
+    color: var(--color-text-secondary);
+}
+
+.dashboard-shell {
+    max-width: 1180px;
+}
+
+.dashboard-header {
+    align-items: center;
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+    margin: 20px 0 18px 0;
+}
+
+.dashboard-header h1 {
+    margin: 0;
+    text-align: left;
+}
+
+.btn-compact {
+    margin: 0;
+    width: auto;
+}
+
+.dashboard-stats {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    margin-bottom: 20px;
+}
+
+.dashboard-stats div {
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.dashboard-stats span {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.dashboard-stats small {
+    color: var(--color-text-secondary);
+}
+
+.order-card small {
+    color: var(--color-text-secondary);
+    display: block;
+    margin-top: 6px;
+}
+
+.btn-success {
+    background-color: var(--color-success);
+    color: #FFFFFF;
+}
+
+.btn-success:hover {
+    background-color: #219653;
+}
+
+@media screen and (max-width: 600px) {
+    .panel {
+        margin: 12px 0;
+        padding: 24px 16px;
+    }
+
+    .order-row,
+    .actions,
+    .dashboard-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .success-banner {
+        margin-left: -16px;
+        margin-right: -16px;
+    }
 }
