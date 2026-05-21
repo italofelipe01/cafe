@@ -1,5 +1,6 @@
-Flask==3.1.2
-Flask-SQLAlchemy==3.1.1
-SQLAlchemy==2.0.45
-python-dotenv==1.2.2
-waitress==3.0.2
+Flask
+Flask-SQLAlchemy
+SQLAlchemy
+python-dotenv
+waitress
+tzdata
