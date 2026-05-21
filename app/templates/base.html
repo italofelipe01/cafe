@@ -12,11 +12,20 @@
         <span class="icon">☀️</span>
     </button>
 
-    <nav class="top-nav" aria-label="Navegação principal">
-        <a href="{{ url_for('main.index') }}">Pedido</a>
-        <a href="{{ url_for('main.copa_dashboard') }}">Copa</a>
-        <a href="{{ url_for('main.admin_dashboard') }}">Admin</a>
-    </nav>
+    <header class="site-header">
+        <img
+            src="{{ url_for('static', filename='images/logo-light.png') }}"
+            alt="EBM"
+            class="site-logo"
+            data-theme-logo
+        >
+
+        <nav class="top-nav" aria-label="Navegação principal">
+            <a href="{{ url_for('main.index') }}">Pedido</a>
+            <a href="{{ url_for('main.copa_dashboard') }}">Copa</a>
+            <a href="{{ url_for('main.admin_dashboard') }}">Admin</a>
+        </nav>
+    </header>
 
     <main class="{% block main_class %}app-shell{% endblock %}">
         {% with messages = get_flashed_messages(with_categories=true) %}

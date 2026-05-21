@@ -4,10 +4,6 @@
 
 {% block content %}
 <section class="panel panel-narrow panel-success">
-    <a href="{{ url_for('main.index') }}" class="brand-link" aria-label="Início">
-        <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="EBM" class="logo" id="logo">
-    </a>
-
     <div class="success-banner">
         <p class="eyebrow">Pedido #{{ order.id }}</p>
         <h1>Pedido solicitado com sucesso</h1>

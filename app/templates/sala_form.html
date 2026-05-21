@@ -4,10 +4,6 @@
 
 {% block content %}
 <section class="panel panel-wide">
-    <a href="{{ url_for('main.index') }}" class="brand-link" aria-label="Início">
-        <img src="{{ url_for('static', filename='images/logo-light.png') }}" alt="EBM" class="logo" id="logo">
-    </a>
-
     <div class="page-heading">
         <p class="eyebrow">Pedido para {{ office.name if office is defined else office_name }}</p>
         <h1>{{ room.name if room is defined else room_name }}</h1>

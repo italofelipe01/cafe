@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Task 2: Manual Dark/Light Mode Toggle
     const toggleButton = document.getElementById('theme-toggle');
-    const logo = document.getElementById('logo');
+    const logos = document.querySelectorAll('[data-theme-logo]');
     const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
 
     function applyTheme() {
@@ -90,11 +90,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateVisuals(isDark) {
-        if (logo) {
-            // Ensure logo src is updated based on the effective theme
-            const logoPath = isDark ? '/static/images/logo-dark.png' : '/static/images/logo-light.png';
+        const logoPath = isDark ? '/static/images/logo-dark.png' : '/static/images/logo-light.png';
+        logos.forEach(logo => {
             logo.src = logoPath;
-        }
+        });
 
         if (toggleButton) {
             const iconSpan = toggleButton.querySelector('.icon');

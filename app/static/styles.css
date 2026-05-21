@@ -165,6 +165,26 @@ a {
     height: auto;
 }
 
+.site-header {
+    align-items: center;
+    box-sizing: border-box;
+    display: grid;
+    gap: 14px;
+    grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) minmax(44px, 180px);
+    margin: 0 auto 12px auto;
+    max-width: var(--content-max);
+    width: 100%;
+}
+
+.site-logo {
+    display: block;
+    height: auto;
+    max-height: 64px;
+    max-width: 180px;
+    object-fit: contain;
+    width: min(180px, 100%);
+}
+
 /* Card Component */
 .card {
     background-color: var(--color-bg-card);
@@ -671,7 +691,7 @@ th {
     flex-wrap: wrap;
     gap: 4px;
     justify-content: center;
-    margin: 0 auto 12px auto;
+    margin: 0 auto;
     padding: 6px;
     max-width: min(100%, 520px);
     box-sizing: border-box;
@@ -863,6 +883,17 @@ th {
         padding: 28px 22px;
     }
 
+    .site-header {
+        grid-template-columns: 1fr;
+        padding-right: 56px;
+    }
+
+    .site-logo {
+        justify-self: center;
+        max-height: 56px;
+        width: min(160px, 52vw);
+    }
+
     .dashboard-header,
     .admin-header {
         align-items: stretch;
@@ -888,8 +919,7 @@ th {
 
     .top-nav {
         border-radius: 12px;
-        margin-right: 54px;
-        width: calc(100% - 54px);
+        width: 100%;
     }
 
     .top-nav a {
@@ -900,6 +930,11 @@ th {
 
     .logo {
         width: 160px;
+    }
+
+    .site-logo {
+        max-height: 48px;
+        width: min(140px, 48vw);
     }
 
     .panel {
