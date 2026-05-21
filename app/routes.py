@@ -4,6 +4,7 @@ import unicodedata
 from app.extensions import db
 from app.models import Office, Order, OrderItem, Product, Space, STATUS_COMPLETED, STATUS_PENDING, local_now
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
+from sqlalchemy import func
 
 
 bp = Blueprint("main", __name__)
@@ -95,11 +96,9 @@ def unique_product_key(name, product_id=None):
         suffix += 1
 
 
-def parse_sort_order(raw_value):
-    try:
-        return int(raw_value or 0)
-    except (TypeError, ValueError):
-        return 0
+def next_product_sort_order():
+    current_max = db.session.query(func.max(Product.sort_order)).scalar()
+    return (current_max or 0) + 1
 
 
 @bp.route("/")
@@ -356,7 +355,6 @@ def admin_products():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         input_type = request.form.get("input_type", "quantity")
-        sort_order = parse_sort_order(request.form.get("sort_order"))
 
         if not name:
             flash("Informe o nome do insumo.", "error")
@@ -374,7 +372,7 @@ def admin_products():
             name=name,
             form_key=unique_product_key(name),
             input_type=input_type,
-            sort_order=sort_order,
+            sort_order=next_product_sort_order(),
             active=True,
         )
         db.session.add(product)
@@ -395,7 +393,6 @@ def admin_update_product(product_id):
 
     name = request.form.get("name", "").strip()
     input_type = request.form.get("input_type", "quantity")
-    sort_order = parse_sort_order(request.form.get("sort_order"))
 
     if not name:
         flash("Informe o nome do insumo.", "error")
@@ -412,7 +409,6 @@ def admin_update_product(product_id):
 
     product.name = name
     product.input_type = input_type
-    product.sort_order = sort_order
     db.session.commit()
     flash("Insumo atualizado.", "success")
     return redirect(url_for("main.admin_products"))
@@ -429,6 +425,34 @@ def admin_toggle_product(product_id):
     db.session.commit()
     flash("Status do insumo atualizado.", "success")
     return redirect(url_for("main.admin_products"))
+
+
+@bp.route("/admin/products/reorder", methods=["POST"])
+def admin_reorder_products():
+    data = request.get_json(silent=True) or {}
+    raw_ids = data.get("product_ids")
+
+    if not isinstance(raw_ids, list) or not raw_ids:
+        return jsonify({"success": False, "message": "Envie a nova ordem dos insumos."}), 400
+
+    try:
+        product_ids = [int(product_id) for product_id in raw_ids]
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "message": "Lista de insumos inválida."}), 400
+
+    if len(product_ids) != len(set(product_ids)):
+        return jsonify({"success": False, "message": "A lista de insumos contém duplicidades."}), 400
+
+    products = Product.query.filter(Product.id.in_(product_ids)).all()
+    if len(products) != len(product_ids):
+        return jsonify({"success": False, "message": "Um ou mais insumos não foram encontrados."}), 404
+
+    products_by_id = {product.id: product for product in products}
+    for index, product_id in enumerate(product_ids, start=1):
+        products_by_id[product_id].sort_order = index
+
+    db.session.commit()
+    return jsonify({"success": True})
 
 
 @bp.route("/api/orders", methods=["GET"])

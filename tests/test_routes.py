@@ -123,6 +123,10 @@ class TestRoutes(unittest.TestCase):
             self.assertIsNotNone(Space.query.filter_by(name="Sala Teste").first())
             product = Product.query.filter_by(name="Chá").one()
             self.assertEqual(product.form_key, "cha")
+            self.assertEqual(
+                product.sort_order,
+                Product.query.count(),
+            )
 
     def test_toggling_office_cascades_to_spaces(self):
         with self.app.app_context():
@@ -164,6 +168,36 @@ class TestRoutes(unittest.TestCase):
         response = self.client.post("/get_rooms", json={"office": "EBM Office Goiânia"})
         self.assertEqual(response.status_code, 200)
         self.assertNotIn("Sala Aton", response.get_json())
+
+    def test_admin_reorders_products(self):
+        with self.app.app_context():
+            products = Product.query.order_by(Product.sort_order.asc()).all()
+            original_ids = [product.id for product in products]
+            reordered_ids = list(reversed(original_ids))
+
+        response = self.client.post(
+            "/admin/products/reorder",
+            json={"product_ids": reordered_ids},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {"success": True})
+
+        with self.app.app_context():
+            saved_ids = [
+                product.id
+                for product in Product.query.order_by(Product.sort_order.asc()).all()
+            ]
+            self.assertEqual(saved_ids, reordered_ids)
+
+    def test_admin_spaces_page_exposes_filter_data(self):
+        response = self.client.get("/admin/spaces")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"data-space-filters", response.data)
+        self.assertIn(b"data-space-office-filter", response.data)
+        self.assertIn(b"data-space-name-filter", response.data)
+        self.assertIn(b"data-space-row", response.data)
 
 
 if __name__ == "__main__":

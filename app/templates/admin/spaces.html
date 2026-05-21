@@ -32,6 +32,28 @@
         </div>
     </form>
 
+    <div class="admin-filters" data-space-filters>
+        <div>
+            <label for="space-filter-office">Filtrar por escritório</label>
+            <select id="space-filter-office" class="form-control" data-space-office-filter>
+                <option value="">Todos os escritórios</option>
+                {% for office in offices %}
+                <option value="{{ office.id }}">{{ office.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label for="space-filter-name">Pesquisar sala</label>
+            <input
+                id="space-filter-name"
+                type="search"
+                class="form-control"
+                placeholder="Digite parte do nome"
+                data-space-name-filter
+            >
+        </div>
+    </div>
+
     <div class="table-wrapper">
         <table class="data-table">
             <thead>
@@ -44,7 +66,7 @@
             </thead>
             <tbody>
                 {% for space in spaces %}
-                <tr>
+                <tr data-space-row data-office-id="{{ space.office_id }}" data-space-name="{{ space.name|lower }}">
                     <td colspan="2">
                         <form method="POST" action="{{ url_for('main.admin_update_space', space_id=space.id) }}" class="inline-edit-form two-columns">
                             <input name="name" type="text" class="form-control" value="{{ space.name }}" required>
@@ -70,10 +92,13 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr>
+                <tr data-empty-row>
                     <td colspan="4">Nenhuma sala cadastrada.</td>
                 </tr>
                 {% endfor %}
+                <tr class="hidden" data-filter-empty-row>
+                    <td colspan="4">Nenhuma sala encontrada com os filtros aplicados.</td>
+                </tr>
             </tbody>
         </table>
     </div>

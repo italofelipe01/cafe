@@ -133,4 +133,126 @@ document.addEventListener('DOMContentLoaded', function () {
             applyTheme();
         }
     });
+
+    const spaceFilters = document.querySelector('[data-space-filters]');
+    if (spaceFilters) {
+        const officeFilter = spaceFilters.querySelector('[data-space-office-filter]');
+        const nameFilter = spaceFilters.querySelector('[data-space-name-filter]');
+        const rows = Array.from(document.querySelectorAll('[data-space-row]'));
+        const emptyRow = document.querySelector('[data-filter-empty-row]');
+
+        function normalize(value) {
+            return value
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function applySpaceFilters() {
+            const selectedOffice = officeFilter ? officeFilter.value : '';
+            const query = nameFilter ? normalize(nameFilter.value.trim()) : '';
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const matchesOffice = !selectedOffice || row.dataset.officeId === selectedOffice;
+                const matchesName = !query || normalize(row.dataset.spaceName || '').includes(query);
+                const isVisible = matchesOffice && matchesName;
+                row.classList.toggle('hidden', !isVisible);
+                if (isVisible) visibleCount += 1;
+            });
+
+            if (emptyRow) {
+                emptyRow.classList.toggle('hidden', visibleCount > 0);
+            }
+        }
+
+        if (officeFilter) officeFilter.addEventListener('change', applySpaceFilters);
+        if (nameFilter) nameFilter.addEventListener('input', applySpaceFilters);
+        applySpaceFilters();
+    }
+
+    const sortableList = document.querySelector('[data-product-sort-list]');
+    if (sortableList) {
+        const status = document.querySelector('[data-product-sort-status]');
+        let draggingRow = null;
+
+        function setStatus(message, isError = false) {
+            if (!status) return;
+            status.textContent = message;
+            status.classList.toggle('is-error', isError);
+        }
+
+        function getRows() {
+            return Array.from(sortableList.querySelectorAll('[data-product-id]'));
+        }
+
+        function getDragAfterElement(y) {
+            return getRows()
+                .filter(row => row !== draggingRow)
+                .reduce((closest, row) => {
+                    const box = row.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset, element: row };
+                    }
+
+                    return closest;
+                }, { offset: Number.NEGATIVE_INFINITY, element: null }).element;
+        }
+
+        async function saveProductOrder() {
+            const productIds = getRows().map(row => row.dataset.productId);
+            setStatus('Salvando nova ordem...');
+
+            try {
+                const response = await fetch(sortableList.dataset.reorderUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ product_ids: productIds })
+                });
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Falha ao salvar ordem.');
+                }
+
+                setStatus('Ordem salva.');
+            } catch (error) {
+                console.error(error);
+                setStatus('Não foi possível salvar a ordem. Recarregue a página e tente novamente.', true);
+            }
+        }
+
+        getRows().forEach(row => {
+            row.addEventListener('dragstart', event => {
+                if (event.target.closest('input, select, button') && !event.target.closest('.drag-handle')) {
+                    event.preventDefault();
+                    return;
+                }
+
+                draggingRow = row;
+                row.classList.add('is-dragging');
+                event.dataTransfer.effectAllowed = 'move';
+            });
+
+            row.addEventListener('dragend', () => {
+                row.classList.remove('is-dragging');
+                draggingRow = null;
+                saveProductOrder();
+            });
+        });
+
+        sortableList.addEventListener('dragover', event => {
+            if (!draggingRow) return;
+            event.preventDefault();
+
+            const afterElement = getDragAfterElement(event.clientY);
+            if (afterElement) {
+                sortableList.insertBefore(draggingRow, afterElement);
+            } else {
+                sortableList.appendChild(draggingRow);
+            }
+        });
+    }
 });

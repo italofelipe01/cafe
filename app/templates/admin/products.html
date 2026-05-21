@@ -14,7 +14,7 @@
     </div>
 
     <form method="POST" action="{{ url_for('main.admin_products') }}" class="admin-create-form">
-        <div class="form-grid-compact">
+        <div class="form-grid-compact product-create-grid">
             <div>
                 <label for="product-name">Novo insumo</label>
                 <input id="product-name" name="name" type="text" class="form-control" required placeholder="Ex.: Chá">
@@ -26,59 +26,49 @@
                     <option value="boolean">Sim/Não</option>
                 </select>
             </div>
-            <div>
-                <label for="product-order">Ordem</label>
-                <input id="product-order" name="sort_order" type="number" class="form-control" value="0">
-            </div>
-            <button type="submit" class="btn btn-primary">Cadastrar</button>
+            <button type="submit" class="btn btn-primary">Cadastrar no fim</button>
         </div>
     </form>
 
-    <div class="table-wrapper">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Insumo</th>
-                    <th>Tipo</th>
-                    <th>Ordem</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for product in products %}
-                <tr>
-                    <td colspan="3">
-                        <form method="POST" action="{{ url_for('main.admin_update_product', product_id=product.id) }}" class="inline-edit-form three-columns">
-                            <input name="name" type="text" class="form-control" value="{{ product.name }}" required>
-                            <select name="input_type" class="form-control">
-                                <option value="quantity" {% if product.input_type == 'quantity' %}selected{% endif %}>Quantidade</option>
-                                <option value="boolean" {% if product.input_type == 'boolean' %}selected{% endif %}>Sim/Não</option>
-                            </select>
-                            <input name="sort_order" type="number" class="form-control" value="{{ product.sort_order }}">
-                            <button type="submit" class="btn btn-primary btn-compact">Salvar</button>
-                        </form>
-                    </td>
-                    <td>
-                        <span class="status-pill {{ 'is-active' if product.active else 'is-inactive' }}">
-                            {{ 'Ativo' if product.active else 'Inativo' }}
-                        </span>
-                    </td>
-                    <td>
-                        <form method="POST" action="{{ url_for('main.admin_toggle_product', product_id=product.id) }}">
-                            <button type="submit" class="btn btn-secondary btn-compact">
-                                {{ 'Desativar' if product.active else 'Ativar' }}
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="5">Nenhum insumo cadastrado.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="admin-section-heading">
+        <h2>Ordem dos insumos</h2>
+        <p>Arraste a linha inteira para reposicionar. A nova ordem é salva automaticamente.</p>
     </div>
+
+    <div
+        class="sortable-list"
+        data-product-sort-list
+        data-reorder-url="{{ url_for('main.admin_reorder_products') }}"
+        aria-label="Lista ordenável de insumos"
+    >
+        {% for product in products %}
+        <div class="sortable-row" draggable="true" data-product-id="{{ product.id }}">
+            <button type="button" class="drag-handle" aria-label="Arrastar {{ product.name }}">↕</button>
+
+            <form method="POST" action="{{ url_for('main.admin_update_product', product_id=product.id) }}" class="inline-edit-form product-edit-form">
+                <input name="name" type="text" class="form-control" value="{{ product.name }}" required>
+                <select name="input_type" class="form-control">
+                    <option value="quantity" {% if product.input_type == 'quantity' %}selected{% endif %}>Quantidade</option>
+                    <option value="boolean" {% if product.input_type == 'boolean' %}selected{% endif %}>Sim/Não</option>
+                </select>
+                <button type="submit" class="btn btn-primary btn-compact">Salvar</button>
+            </form>
+
+            <span class="status-pill {{ 'is-active' if product.active else 'is-inactive' }}">
+                {{ 'Ativo' if product.active else 'Inativo' }}
+            </span>
+
+            <form method="POST" action="{{ url_for('main.admin_toggle_product', product_id=product.id) }}" class="row-action-form">
+                <button type="submit" class="btn btn-secondary btn-compact">
+                    {{ 'Desativar' if product.active else 'Ativar' }}
+                </button>
+            </form>
+        </div>
+        {% else %}
+        <p class="empty-message">Nenhum insumo cadastrado.</p>
+        {% endfor %}
+    </div>
+
+    <p class="save-indicator" data-product-sort-status aria-live="polite"></p>
 </section>
 {% endblock %}
