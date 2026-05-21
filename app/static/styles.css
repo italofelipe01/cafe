@@ -198,7 +198,8 @@ body.theme-shift main {
     body.page-exit .site-header,
     body.page-exit main,
     body.theme-shift .site-header,
-    body.theme-shift main {
+    body.theme-shift main,
+    .order-card.is-completing {
         animation: none;
     }
 }
@@ -465,6 +466,22 @@ th {
     display: flex;
     flex-direction: column;
     min-width: 0;
+}
+
+.order-card.is-completing {
+    animation: orderSlideOut 180ms ease-in both;
+    pointer-events: none;
+}
+
+@keyframes orderSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(24px);
+    }
 }
 
 .order-header {

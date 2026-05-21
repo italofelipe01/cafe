@@ -9,6 +9,7 @@ const modalConfirm = completeModal ? completeModal.querySelector('[data-modal-co
 const knownOrderIds = new Set();
 let firstLoad = true;
 let pendingCompletionOrder = null;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function notifyNewOrder() {
     try {
@@ -54,6 +55,7 @@ function clearOrders() {
 function createOrderCard(order) {
     const card = document.createElement('article');
     card.className = 'order-card';
+    card.dataset.orderId = order.id;
 
     const header = document.createElement('div');
     header.className = 'order-header';
@@ -160,6 +162,19 @@ function closeCompleteModal() {
     pendingCompletionOrder = null;
 }
 
+function animateCompletedOrder(orderId) {
+    const card = ordersContainer.querySelector(`[data-order-id="${orderId}"]`);
+    if (!card || reducedMotion) {
+        return Promise.resolve();
+    }
+
+    card.classList.add('is-completing');
+
+    return new Promise(resolve => {
+        window.setTimeout(resolve, 190);
+    });
+}
+
 async function completeOrder(orderId) {
     if (modalConfirm) modalConfirm.disabled = true;
 
@@ -173,6 +188,7 @@ async function completeOrder(orderId) {
 
         knownOrderIds.delete(orderId);
         closeCompleteModal();
+        await animateCompletedOrder(orderId);
         fetchOrders();
     } catch (error) {
         setError('Nao foi possivel concluir o pedido.');
