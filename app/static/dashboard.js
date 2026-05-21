@@ -2,8 +2,13 @@ const ordersContainer = document.getElementById('orders-container');
 const dashboardError = document.getElementById('dashboard-error');
 const pendingCount = document.getElementById('pending-count');
 const oldestOrder = document.getElementById('oldest-order');
+const completeModal = document.getElementById('complete-modal');
+const modalRoom = completeModal ? completeModal.querySelector('[data-modal-room]') : null;
+const modalCancel = completeModal ? completeModal.querySelector('[data-modal-cancel]') : null;
+const modalConfirm = completeModal ? completeModal.querySelector('[data-modal-confirm]') : null;
 const knownOrderIds = new Set();
 let firstLoad = true;
+let pendingCompletionOrder = null;
 
 function notifyNewOrder() {
     try {
@@ -81,7 +86,7 @@ function createOrderCard(order) {
     button.className = 'btn btn-success';
     button.type = 'button';
     button.textContent = 'Concluir';
-    button.addEventListener('click', () => completeOrder(order.id));
+    button.addEventListener('click', () => openCompleteModal(order));
 
     card.append(header, list, button);
     return card;
@@ -134,8 +139,29 @@ async function fetchOrders() {
     }
 }
 
+function openCompleteModal(order) {
+    if (!completeModal) {
+        completeOrder(order.id);
+        return;
+    }
+
+    pendingCompletionOrder = order;
+    if (modalRoom) modalRoom.textContent = order.room;
+    completeModal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+    if (modalConfirm) modalConfirm.focus();
+}
+
+function closeCompleteModal() {
+    if (!completeModal) return;
+
+    completeModal.classList.add('hidden');
+    document.body.classList.remove('modal-open');
+    pendingCompletionOrder = null;
+}
+
 async function completeOrder(orderId) {
-    if (!window.confirm('Marcar pedido como concluido?')) return;
+    if (modalConfirm) modalConfirm.disabled = true;
 
     try {
         const response = await fetch(`/api/complete_order/${orderId}`, { method: 'POST' });
@@ -146,11 +172,37 @@ async function completeOrder(orderId) {
         }
 
         knownOrderIds.delete(orderId);
+        closeCompleteModal();
         fetchOrders();
     } catch (error) {
         setError('Nao foi possivel concluir o pedido.');
         console.error(error);
+    } finally {
+        if (modalConfirm) modalConfirm.disabled = false;
     }
+}
+
+if (modalCancel) {
+    modalCancel.addEventListener('click', closeCompleteModal);
+}
+
+if (modalConfirm) {
+    modalConfirm.addEventListener('click', () => {
+        if (!pendingCompletionOrder) return;
+        completeOrder(pendingCompletionOrder.id);
+    });
+}
+
+if (completeModal) {
+    completeModal.addEventListener('click', event => {
+        if (event.target === completeModal) closeCompleteModal();
+    });
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !completeModal.classList.contains('hidden')) {
+            closeCompleteModal();
+        }
+    });
 }
 
 fetchOrders();

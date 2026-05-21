@@ -90,6 +90,14 @@ class TestRoutes(unittest.TestCase):
             self.assertEqual(order.status, STATUS_COMPLETED)
             self.assertIsNotNone(order.completed_at)
 
+    def test_copa_dashboard_uses_custom_completion_modal(self):
+        response = self.client.get("/copa")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'id="complete-modal"', response.data)
+        self.assertIn("Concluir pedido".encode(), response.data)
+        self.assertNotIn("Novo pedido".encode(), response.data)
+
     def test_admin_can_create_office_space_and_product(self):
         response = self.client.post(
             "/admin/offices",

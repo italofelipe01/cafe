@@ -9,7 +9,6 @@
         <p class="eyebrow">Operação da copa</p>
         <h1>Pedidos pendentes</h1>
     </div>
-    <a href="{{ url_for('main.index') }}" class="btn btn-secondary btn-compact">Novo pedido</a>
 </header>
 
 <section class="dashboard-stats" aria-label="Resumo dos pedidos">
@@ -26,6 +25,20 @@
 <div id="dashboard-error" class="alert alert-error hidden" role="alert"></div>
 <div id="orders-container" class="orders-container">
     <p class="empty-message">Carregando pedidos...</p>
+</div>
+
+<div id="complete-modal" class="modal-backdrop hidden" role="presentation">
+    <section class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="complete-modal-title">
+        <p class="eyebrow">Confirmação</p>
+        <h2 id="complete-modal-title">Concluir pedido?</h2>
+        <p class="modal-copy">
+            O pedido de <strong data-modal-room></strong> será removido da lista de pendentes.
+        </p>
+        <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" data-modal-cancel>Cancelar</button>
+            <button type="button" class="btn btn-success" data-modal-confirm>Concluir pedido</button>
+        </div>
+    </section>
 </div>
 {% endblock %}
 
