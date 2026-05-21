@@ -26,6 +26,12 @@
     /* Table Colors */
     --color-table-header-bg: #f2f2f2;
     --color-table-border: #ddd;
+    --space-page-x: 20px;
+    --space-page-y: 20px;
+    --content-max: 1180px;
+    --panel-narrow-max: 620px;
+    --panel-wide-max: 1120px;
+    --control-min-height: 44px;
 }
 
 /* Dark Mode Overrides */
@@ -117,11 +123,16 @@ body {
     background-color: var(--color-bg-body);
     color: var(--color-text-main);
     margin: 0;
-    padding: 20px;
+    padding: var(--space-page-y) var(--space-page-x);
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -232,6 +243,7 @@ select {
     color: var(--color-input-text);
     font-family: "Fedra Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     font-size: 1rem;
+    min-height: var(--control-min-height);
     box-sizing: border-box;
 }
 
@@ -251,6 +263,7 @@ button {
     text-align: center;
     transition: background-color 0.3s ease;
     width: 100%; /* Default to full width for submit buttons based on old styles */
+    min-height: var(--control-min-height);
     box-sizing: border-box;
 }
 
@@ -348,10 +361,11 @@ th {
 
 /* Dashboard Specifics */
 .orders-container {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
     gap: 20px;
-    justify-content: center;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    justify-content: stretch;
+    width: 100%;
 }
 
 .order-card {
@@ -360,9 +374,9 @@ th {
     border-radius: 10px;
     box-shadow: 0 4px 6px var(--color-shadow);
     padding: 20px;
-    width: 300px;
     display: flex;
     flex-direction: column;
+    min-width: 0;
 }
 
 .order-header {
@@ -392,9 +406,14 @@ th {
 
 .order-items li {
     display: flex;
+    gap: 12px;
     justify-content: space-between;
     margin-bottom: 5px;
     color: var(--color-text-main);
+}
+
+.order-items li span {
+    min-width: 0;
 }
 
 .btn-concluir {
@@ -415,13 +434,21 @@ th {
 }
 
 .app-shell,
-.dashboard-shell {
+.dashboard-shell,
+.admin-shell {
+    box-sizing: border-box;
     width: 100%;
 }
 
-.app-shell {
+.app-shell,
+.dashboard-shell,
+.admin-shell {
     display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
+    max-width: var(--content-max);
+    margin: 0 auto;
 }
 
 .panel {
@@ -430,17 +457,18 @@ th {
     border-radius: 8px;
     box-shadow: 0 4px 10px var(--color-shadow);
     box-sizing: border-box;
-    margin: 20px;
+    margin: 20px auto;
     padding: 32px;
     width: 100%;
+    max-width: var(--panel-wide-max);
 }
 
 .panel-narrow {
-    max-width: 620px;
+    max-width: var(--panel-narrow-max);
 }
 
 .panel-wide {
-    max-width: 900px;
+    max-width: var(--panel-wide-max);
 }
 
 .brand-link {
@@ -574,16 +602,13 @@ th {
     color: var(--color-text-secondary);
 }
 
-.dashboard-shell {
-    max-width: 1180px;
-}
-
 .dashboard-header {
     align-items: center;
     display: flex;
     gap: 20px;
     justify-content: space-between;
     margin: 20px 0 18px 0;
+    width: 100%;
 }
 
 .dashboard-header h1 {
@@ -601,6 +626,7 @@ th {
     gap: 14px;
     grid-template-columns: repeat(2, minmax(140px, 1fr));
     margin-bottom: 20px;
+    width: 100%;
 }
 
 .dashboard-stats div {
@@ -642,10 +668,13 @@ th {
     border-radius: 999px;
     box-shadow: 0 3px 8px var(--color-shadow);
     display: flex;
+    flex-wrap: wrap;
     gap: 4px;
     justify-content: center;
     margin: 0 auto 12px auto;
     padding: 6px;
+    max-width: min(100%, 520px);
+    box-sizing: border-box;
 }
 
 .top-nav a {
@@ -662,7 +691,7 @@ th {
 .flash-stack {
     box-sizing: border-box;
     margin: 0 auto;
-    max-width: 900px;
+    max-width: var(--panel-wide-max);
     width: 100%;
 }
 
@@ -686,8 +715,9 @@ th {
 .admin-metrics {
     display: grid;
     gap: 14px;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     margin-bottom: 20px;
+    width: 100%;
 }
 
 .admin-metrics div,
@@ -711,7 +741,7 @@ th {
 .admin-actions {
     display: grid;
     gap: 14px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
 }
 
 .admin-action-card {
@@ -749,7 +779,14 @@ th {
 }
 
 .table-wrapper {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
     overflow-x: auto;
+    width: 100%;
+}
+
+.table-wrapper .data-table {
+    margin-top: 0;
 }
 
 .data-table {
@@ -798,7 +835,73 @@ th {
     color: var(--color-text-secondary);
 }
 
+@media screen and (min-width: 1280px) {
+    :root {
+        --space-page-x: 28px;
+        --panel-wide-max: 1120px;
+    }
+
+    .panel {
+        padding: 40px;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    :root {
+        --space-page-x: 16px;
+        --space-page-y: 16px;
+    }
+
+    .btn-theme-toggle {
+        top: 12px;
+        right: 12px;
+        width: 44px;
+        height: 44px;
+    }
+
+    .panel {
+        padding: 28px 22px;
+    }
+
+    .dashboard-header,
+    .admin-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .dashboard-header h1,
+    .admin-header h1 {
+        text-align: center;
+    }
+
+    .form-grid-compact {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media screen and (max-width: 600px) {
+    :root {
+        --space-page-x: 12px;
+        --space-page-y: 12px;
+        --control-min-height: 42px;
+    }
+
+    .top-nav {
+        border-radius: 12px;
+        margin-right: 54px;
+        width: calc(100% - 54px);
+    }
+
+    .top-nav a {
+        flex: 1 1 auto;
+        padding: 8px 10px;
+        text-align: center;
+    }
+
+    .logo {
+        width: 160px;
+    }
+
     .panel {
         margin: 12px 0;
         padding: 24px 16px;
@@ -817,14 +920,27 @@ th {
         grid-template-columns: 1fr;
     }
 
-    .dashboard-header,
-    .admin-header {
-        align-items: stretch;
-        flex-direction: column;
-    }
-
     .success-banner {
         margin-left: -16px;
         margin-right: -16px;
+    }
+
+    .summary-list li,
+    .order-items li {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .data-table {
+        min-width: 680px;
+    }
+}
+
+@media screen and (max-width: 420px) {
+    .btn,
+    input[type="submit"],
+    button {
+        padding-left: 14px;
+        padding-right: 14px;
     }
 }
