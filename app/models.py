@@ -16,6 +16,7 @@ def local_now():
 class Office(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
+    active = db.Column(db.Boolean, default=True, nullable=False)
     spaces = db.relationship(
         "Space",
         back_populates="office",

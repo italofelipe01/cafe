@@ -1,6 +1,9 @@
+import re
+import unicodedata
+
 from app.extensions import db
 from app.models import Office, Order, OrderItem, Product, Space, STATUS_COMPLETED, STATUS_PENDING, local_now
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 
 
 bp = Blueprint("main", __name__)
@@ -14,7 +17,7 @@ def active_products():
 def active_offices():
     return (
         Office.query.join(Office.spaces)
-        .filter(Space.active.is_(True))
+        .filter(Office.active.is_(True), Space.active.is_(True))
         .distinct()
         .order_by(Office.name.asc())
         .all()
@@ -25,7 +28,7 @@ def find_space(office_name, space_name):
     return (
         Space.query.join(Space.office)
         .filter(Space.active.is_(True), Space.name == space_name)
-        .filter(Office.name == office_name)
+        .filter(Office.active.is_(True), Office.name == office_name)
         .first()
     )
 
@@ -68,6 +71,37 @@ def collect_order_items(form):
     return items
 
 
+def slugify(value):
+    normalized = unicodedata.normalize("NFKD", value)
+    ascii_value = normalized.encode("ascii", "ignore").decode("ascii")
+    slug = re.sub(r"[^a-zA-Z0-9]+", "_", ascii_value).strip("_").lower()
+    return slug or "item"
+
+
+def unique_product_key(name, product_id=None):
+    base_key = slugify(name)
+    candidate = base_key
+    suffix = 2
+
+    while True:
+        query = Product.query.filter_by(form_key=candidate)
+        if product_id:
+            query = query.filter(Product.id != product_id)
+
+        if not query.first():
+            return candidate
+
+        candidate = f"{base_key}_{suffix}"
+        suffix += 1
+
+
+def parse_sort_order(raw_value):
+    try:
+        return int(raw_value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 @bp.route("/")
 def index():
     return render_template("index.html", offices=active_offices())
@@ -89,7 +123,11 @@ def get_rooms():
 
     spaces = (
         Space.query.join(Space.office)
-        .filter(Space.active.is_(True), Space.office.has(name=selected_office_name))
+        .filter(
+            Space.active.is_(True),
+            Office.active.is_(True),
+            Office.name == selected_office_name,
+        )
         .order_by(Space.name.asc())
         .all()
     )
@@ -160,6 +198,237 @@ def submit_form():
 @bp.route("/copa")
 def copa_dashboard():
     return render_template("copa_dashboard.html")
+
+
+@bp.route("/admin")
+def admin_dashboard():
+    stats = {
+        "offices": Office.query.count(),
+        "spaces": Space.query.count(),
+        "products": Product.query.count(),
+        "pending_orders": Order.query.filter_by(status=STATUS_PENDING).count(),
+    }
+    return render_template("admin/dashboard.html", stats=stats)
+
+
+@bp.route("/admin/offices", methods=["GET", "POST"])
+def admin_offices():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        if not name:
+            flash("Informe o nome do escritório.", "error")
+            return redirect(url_for("main.admin_offices"))
+
+        if Office.query.filter_by(name=name).first():
+            flash("Já existe um escritório com esse nome.", "error")
+            return redirect(url_for("main.admin_offices"))
+
+        db.session.add(Office(name=name, active=True))
+        db.session.commit()
+        flash("Escritório cadastrado.", "success")
+        return redirect(url_for("main.admin_offices"))
+
+    offices = Office.query.order_by(Office.name.asc()).all()
+    return render_template("admin/offices.html", offices=offices)
+
+
+@bp.route("/admin/offices/<int:office_id>/update", methods=["POST"])
+def admin_update_office(office_id):
+    office = db.session.get(Office, office_id)
+    if not office:
+        flash("Escritório não encontrado.", "error")
+        return redirect(url_for("main.admin_offices"))
+
+    name = request.form.get("name", "").strip()
+    if not name:
+        flash("Informe o nome do escritório.", "error")
+        return redirect(url_for("main.admin_offices"))
+
+    duplicate = Office.query.filter(Office.name == name, Office.id != office.id).first()
+    if duplicate:
+        flash("Já existe outro escritório com esse nome.", "error")
+        return redirect(url_for("main.admin_offices"))
+
+    office.name = name
+    db.session.commit()
+    flash("Escritório atualizado.", "success")
+    return redirect(url_for("main.admin_offices"))
+
+
+@bp.route("/admin/offices/<int:office_id>/toggle", methods=["POST"])
+def admin_toggle_office(office_id):
+    office = db.session.get(Office, office_id)
+    if not office:
+        flash("Escritório não encontrado.", "error")
+        return redirect(url_for("main.admin_offices"))
+
+    should_activate = not office.active
+    office.active = should_activate
+
+    if should_activate:
+        for space in office.spaces:
+            space.active = True
+    else:
+        for space in office.spaces:
+            space.active = False
+
+    db.session.commit()
+    flash("Status do escritório atualizado.", "success")
+    return redirect(url_for("main.admin_offices"))
+
+
+@bp.route("/admin/spaces", methods=["GET", "POST"])
+def admin_spaces():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        office_id = request.form.get("office_id")
+        office = db.session.get(Office, int(office_id)) if office_id and office_id.isdigit() else None
+
+        if not name or not office:
+            flash("Informe escritório e nome da sala.", "error")
+            return redirect(url_for("main.admin_spaces"))
+
+        exists = Space.query.filter_by(office_id=office.id, name=name).first()
+        if exists:
+            flash("Já existe uma sala com esse nome nesse escritório.", "error")
+            return redirect(url_for("main.admin_spaces"))
+
+        db.session.add(Space(name=name, office=office, active=True))
+        db.session.commit()
+        flash("Sala cadastrada.", "success")
+        return redirect(url_for("main.admin_spaces"))
+
+    offices = Office.query.order_by(Office.name.asc()).all()
+    spaces = Space.query.join(Space.office).order_by(Office.name.asc(), Space.name.asc()).all()
+    return render_template("admin/spaces.html", offices=offices, spaces=spaces)
+
+
+@bp.route("/admin/spaces/<int:space_id>/update", methods=["POST"])
+def admin_update_space(space_id):
+    space = db.session.get(Space, space_id)
+    if not space:
+        flash("Sala não encontrada.", "error")
+        return redirect(url_for("main.admin_spaces"))
+
+    name = request.form.get("name", "").strip()
+    office_id = request.form.get("office_id")
+    office = db.session.get(Office, int(office_id)) if office_id and office_id.isdigit() else None
+
+    if not name or not office:
+        flash("Informe escritório e nome da sala.", "error")
+        return redirect(url_for("main.admin_spaces"))
+
+    duplicate = Space.query.filter(
+        Space.office_id == office.id,
+        Space.name == name,
+        Space.id != space.id,
+    ).first()
+    if duplicate:
+        flash("Já existe outra sala com esse nome nesse escritório.", "error")
+        return redirect(url_for("main.admin_spaces"))
+
+    space.name = name
+    space.office = office
+    db.session.commit()
+    flash("Sala atualizada.", "success")
+    return redirect(url_for("main.admin_spaces"))
+
+
+@bp.route("/admin/spaces/<int:space_id>/toggle", methods=["POST"])
+def admin_toggle_space(space_id):
+    space = db.session.get(Space, space_id)
+    if not space:
+        flash("Sala não encontrada.", "error")
+        return redirect(url_for("main.admin_spaces"))
+
+    if not space.active and not space.office.active:
+        flash("Reative o escritório antes de ativar uma sala dele.", "error")
+        return redirect(url_for("main.admin_spaces"))
+
+    space.active = not space.active
+    db.session.commit()
+    flash("Status da sala atualizado.", "success")
+    return redirect(url_for("main.admin_spaces"))
+
+
+@bp.route("/admin/products", methods=["GET", "POST"])
+def admin_products():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        input_type = request.form.get("input_type", "quantity")
+        sort_order = parse_sort_order(request.form.get("sort_order"))
+
+        if not name:
+            flash("Informe o nome do insumo.", "error")
+            return redirect(url_for("main.admin_products"))
+
+        if input_type not in {"quantity", "boolean"}:
+            flash("Tipo de insumo inválido.", "error")
+            return redirect(url_for("main.admin_products"))
+
+        if Product.query.filter_by(name=name).first():
+            flash("Já existe um insumo com esse nome.", "error")
+            return redirect(url_for("main.admin_products"))
+
+        product = Product(
+            name=name,
+            form_key=unique_product_key(name),
+            input_type=input_type,
+            sort_order=sort_order,
+            active=True,
+        )
+        db.session.add(product)
+        db.session.commit()
+        flash("Insumo cadastrado.", "success")
+        return redirect(url_for("main.admin_products"))
+
+    products = Product.query.order_by(Product.sort_order.asc(), Product.name.asc()).all()
+    return render_template("admin/products.html", products=products)
+
+
+@bp.route("/admin/products/<int:product_id>/update", methods=["POST"])
+def admin_update_product(product_id):
+    product = db.session.get(Product, product_id)
+    if not product:
+        flash("Insumo não encontrado.", "error")
+        return redirect(url_for("main.admin_products"))
+
+    name = request.form.get("name", "").strip()
+    input_type = request.form.get("input_type", "quantity")
+    sort_order = parse_sort_order(request.form.get("sort_order"))
+
+    if not name:
+        flash("Informe o nome do insumo.", "error")
+        return redirect(url_for("main.admin_products"))
+
+    if input_type not in {"quantity", "boolean"}:
+        flash("Tipo de insumo inválido.", "error")
+        return redirect(url_for("main.admin_products"))
+
+    duplicate = Product.query.filter(Product.name == name, Product.id != product.id).first()
+    if duplicate:
+        flash("Já existe outro insumo com esse nome.", "error")
+        return redirect(url_for("main.admin_products"))
+
+    product.name = name
+    product.input_type = input_type
+    product.sort_order = sort_order
+    db.session.commit()
+    flash("Insumo atualizado.", "success")
+    return redirect(url_for("main.admin_products"))
+
+
+@bp.route("/admin/products/<int:product_id>/toggle", methods=["POST"])
+def admin_toggle_product(product_id):
+    product = db.session.get(Product, product_id)
+    if not product:
+        flash("Insumo não encontrado.", "error")
+        return redirect(url_for("main.admin_products"))
+
+    product.active = not product.active
+    db.session.commit()
+    flash("Status do insumo atualizado.", "success")
+    return redirect(url_for("main.admin_products"))
 
 
 @bp.route("/api/orders", methods=["GET"])

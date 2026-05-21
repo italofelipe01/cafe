@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Salas | Admin Café EBM{% endblock %}
+{% block main_class %}admin-shell{% endblock %}
+
+{% block content %}
+<section class="panel panel-wide">
+    <div class="admin-header">
+        <div>
+            <p class="eyebrow">Administração</p>
+            <h1>Salas</h1>
+        </div>
+        <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-secondary btn-compact">Voltar</a>
+    </div>
+
+    <form method="POST" action="{{ url_for('main.admin_spaces') }}" class="admin-create-form">
+        <div class="form-grid-compact">
+            <div>
+                <label for="space-office">Escritório</label>
+                <select id="space-office" name="office_id" class="form-control" required>
+                    <option value="">Selecione</option>
+                    {% for office in offices %}
+                    <option value="{{ office.id }}">{{ office.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="space-name">Nova sala</label>
+                <input id="space-name" name="name" type="text" class="form-control" required placeholder="Ex.: Sala Aton">
+            </div>
+            <button type="submit" class="btn btn-primary">Cadastrar</button>
+        </div>
+    </form>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Sala</th>
+                    <th>Escritório</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for space in spaces %}
+                <tr>
+                    <td colspan="2">
+                        <form method="POST" action="{{ url_for('main.admin_update_space', space_id=space.id) }}" class="inline-edit-form two-columns">
+                            <input name="name" type="text" class="form-control" value="{{ space.name }}" required>
+                            <select name="office_id" class="form-control" required>
+                                {% for office in offices %}
+                                <option value="{{ office.id }}" {% if office.id == space.office_id %}selected{% endif %}>{{ office.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-compact">Salvar</button>
+                        </form>
+                    </td>
+                    <td>
+                        <span class="status-pill {{ 'is-active' if space.active else 'is-inactive' }}">
+                            {{ 'Ativa' if space.active else 'Inativa' }}
+                        </span>
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('main.admin_toggle_space', space_id=space.id) }}">
+                            <button type="submit" class="btn btn-secondary btn-compact" {% if not space.office.active and not space.active %}title="Reative o escritório antes de ativar a sala"{% endif %}>
+                                {{ 'Desativar' if space.active else 'Ativar' }}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4">Nenhuma sala cadastrada.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

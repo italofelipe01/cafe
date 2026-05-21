@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Admin | Espaço Café EBM{% endblock %}
+{% block main_class %}admin-shell{% endblock %}
+
+{% block content %}
+<section class="panel panel-wide">
+    <div class="page-heading">
+        <p class="eyebrow">Configuração do portal</p>
+        <h1>Administração</h1>
+        <p>Cadastre escritórios, salas e insumos disponíveis para pedido.</p>
+    </div>
+
+    <div class="admin-metrics">
+        <div>
+            <strong>{{ stats.offices }}</strong>
+            <span>Escritórios</span>
+        </div>
+        <div>
+            <strong>{{ stats.spaces }}</strong>
+            <span>Salas</span>
+        </div>
+        <div>
+            <strong>{{ stats.products }}</strong>
+            <span>Insumos</span>
+        </div>
+        <div>
+            <strong>{{ stats.pending_orders }}</strong>
+            <span>Pedidos pendentes</span>
+        </div>
+    </div>
+
+    <div class="admin-actions">
+        <a class="admin-action-card" href="{{ url_for('main.admin_offices') }}">
+            <strong>Escritórios</strong>
+            <span>Gerenciar unidades disponíveis no portal.</span>
+        </a>
+        <a class="admin-action-card" href="{{ url_for('main.admin_spaces') }}">
+            <strong>Salas</strong>
+            <span>Vincular salas aos escritórios cadastrados.</span>
+        </a>
+        <a class="admin-action-card" href="{{ url_for('main.admin_products') }}">
+            <strong>Insumos</strong>
+            <span>Controlar itens e serviços exibidos no pedido.</span>
+        </a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Insumos | Admin Café EBM{% endblock %}
+{% block main_class %}admin-shell{% endblock %}
+
+{% block content %}
+<section class="panel panel-wide">
+    <div class="admin-header">
+        <div>
+            <p class="eyebrow">Administração</p>
+            <h1>Insumos</h1>
+        </div>
+        <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-secondary btn-compact">Voltar</a>
+    </div>
+
+    <form method="POST" action="{{ url_for('main.admin_products') }}" class="admin-create-form">
+        <div class="form-grid-compact">
+            <div>
+                <label for="product-name">Novo insumo</label>
+                <input id="product-name" name="name" type="text" class="form-control" required placeholder="Ex.: Chá">
+            </div>
+            <div>
+                <label for="product-type">Tipo</label>
+                <select id="product-type" name="input_type" class="form-control">
+                    <option value="quantity">Quantidade</option>
+                    <option value="boolean">Sim/Não</option>
+                </select>
+            </div>
+            <div>
+                <label for="product-order">Ordem</label>
+                <input id="product-order" name="sort_order" type="number" class="form-control" value="0">
+            </div>
+            <button type="submit" class="btn btn-primary">Cadastrar</button>
+        </div>
+    </form>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Insumo</th>
+                    <th>Tipo</th>
+                    <th>Ordem</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td colspan="3">
+                        <form method="POST" action="{{ url_for('main.admin_update_product', product_id=product.id) }}" class="inline-edit-form three-columns">
+                            <input name="name" type="text" class="form-control" value="{{ product.name }}" required>
+                            <select name="input_type" class="form-control">
+                                <option value="quantity" {% if product.input_type == 'quantity' %}selected{% endif %}>Quantidade</option>
+                                <option value="boolean" {% if product.input_type == 'boolean' %}selected{% endif %}>Sim/Não</option>
+                            </select>
+                            <input name="sort_order" type="number" class="form-control" value="{{ product.sort_order }}">
+                            <button type="submit" class="btn btn-primary btn-compact">Salvar</button>
+                        </form>
+                    </td>
+                    <td>
+                        <span class="status-pill {{ 'is-active' if product.active else 'is-inactive' }}">
+                            {{ 'Ativo' if product.active else 'Inativo' }}
+                        </span>
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('main.admin_toggle_product', product_id=product.id) }}">
+                            <button type="submit" class="btn btn-secondary btn-compact">
+                                {{ 'Desativar' if product.active else 'Ativar' }}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">Nenhum insumo cadastrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

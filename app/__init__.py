@@ -88,6 +88,7 @@ def seed_database():
             office = Office(name=office_name)
             db.session.add(office)
             db.session.flush()
+        office.active = True
 
         for space_name in spaces:
             exists = Space.query.filter_by(office_id=office.id, name=space_name).first()

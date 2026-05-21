@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Escritórios | Admin Café EBM{% endblock %}
+{% block main_class %}admin-shell{% endblock %}
+
+{% block content %}
+<section class="panel panel-wide">
+    <div class="admin-header">
+        <div>
+            <p class="eyebrow">Administração</p>
+            <h1>Escritórios</h1>
+        </div>
+        <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-secondary btn-compact">Voltar</a>
+    </div>
+
+    <form method="POST" action="{{ url_for('main.admin_offices') }}" class="admin-create-form">
+        <label for="office-name">Novo escritório</label>
+        <div class="inline-form">
+            <input id="office-name" name="name" type="text" class="form-control" required placeholder="Ex.: EBM Office Goiânia">
+            <button type="submit" class="btn btn-primary">Cadastrar</button>
+        </div>
+    </form>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for office in offices %}
+                <tr>
+                    <td>
+                        <form method="POST" action="{{ url_for('main.admin_update_office', office_id=office.id) }}" class="inline-edit-form">
+                            <input name="name" type="text" class="form-control" value="{{ office.name }}" required>
+                            <button type="submit" class="btn btn-primary btn-compact">Salvar</button>
+                        </form>
+                    </td>
+                    <td>
+                        <span class="status-pill {{ 'is-active' if office.active else 'is-inactive' }}">
+                            {{ 'Ativo' if office.active else 'Inativo' }}
+                        </span>
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('main.admin_toggle_office', office_id=office.id) }}">
+                            <button type="submit" class="btn btn-secondary btn-compact">
+                                {{ 'Desativar' if office.active else 'Ativar' }}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3">Nenhum escritório cadastrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

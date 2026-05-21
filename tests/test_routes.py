@@ -2,7 +2,7 @@ import unittest
 
 from app import create_app
 from app.extensions import db
-from app.models import Order, STATUS_COMPLETED
+from app.models import Office, Order, Product, Space, STATUS_COMPLETED
 
 
 class TestRoutes(unittest.TestCase):
@@ -14,6 +14,7 @@ class TestRoutes(unittest.TestCase):
         with self.app.app_context():
             db.session.remove()
             db.drop_all()
+            db.engine.dispose()
 
     def test_index_route(self):
         response = self.client.get("/")
@@ -88,6 +89,81 @@ class TestRoutes(unittest.TestCase):
             order = db.session.get(Order, order_id)
             self.assertEqual(order.status, STATUS_COMPLETED)
             self.assertIsNotNone(order.completed_at)
+
+    def test_admin_can_create_office_space_and_product(self):
+        response = self.client.post(
+            "/admin/offices",
+            data={"name": "EBM Teste"},
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("EBM Teste".encode(), response.data)
+
+        with self.app.app_context():
+            office = Office.query.filter_by(name="EBM Teste").one()
+            office_id = office.id
+
+        response = self.client.post(
+            "/admin/spaces",
+            data={"office_id": str(office_id), "name": "Sala Teste"},
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Sala Teste".encode(), response.data)
+
+        response = self.client.post(
+            "/admin/products",
+            data={"name": "Chá", "input_type": "quantity", "sort_order": "99"},
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Chá".encode(), response.data)
+
+        with self.app.app_context():
+            self.assertIsNotNone(Space.query.filter_by(name="Sala Teste").first())
+            product = Product.query.filter_by(name="Chá").one()
+            self.assertEqual(product.form_key, "cha")
+
+    def test_toggling_office_cascades_to_spaces(self):
+        with self.app.app_context():
+            office = Office.query.filter_by(name="EBM Office Goiânia").one()
+            office_id = office.id
+            space_ids = [space.id for space in office.spaces]
+
+        response = self.client.post(
+            f"/admin/offices/{office_id}/toggle",
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        with self.app.app_context():
+            office = db.session.get(Office, office_id)
+            spaces = Space.query.filter(Space.id.in_(space_ids)).all()
+            self.assertFalse(office.active)
+            self.assertTrue(all(not space.active for space in spaces))
+
+        response = self.client.post(
+            f"/admin/offices/{office_id}/toggle",
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+
+        with self.app.app_context():
+            office = db.session.get(Office, office_id)
+            spaces = Space.query.filter(Space.id.in_(space_ids)).all()
+            self.assertTrue(office.active)
+            self.assertTrue(all(space.active for space in spaces))
+
+    def test_public_room_list_ignores_inactive_spaces(self):
+        with self.app.app_context():
+            space = Space.query.filter_by(name="Sala Aton").one()
+            space_id = space.id
+
+        self.client.post(f"/admin/spaces/{space_id}/toggle", follow_redirects=True)
+
+        response = self.client.post("/get_rooms", json={"office": "EBM Office Goiânia"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("Sala Aton", response.get_json())
 
 
 if __name__ == "__main__":

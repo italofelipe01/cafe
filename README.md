@@ -6,6 +6,7 @@ Aplicação Flask para solicitar itens de copa por sala e acompanhar pedidos pen
 
 - Seleção de escritório e sala.
 - Cardápio configurado por seed no banco.
+- Admin simples para cadastrar escritórios, salas e insumos.
 - Pedido com múltiplos itens.
 - Confirmação do pedido.
 - Painel da copa em `/copa`, com atualização automática a cada 10 segundos.
@@ -58,6 +59,7 @@ Acesse:
 
 - Solicitação: http://127.0.0.1:5000/
 - Painel da copa: http://127.0.0.1:5000/copa
+- Admin: http://127.0.0.1:5000/admin
 
 Por padrão, o app usa SQLite em memória para facilitar testes locais. Os dados são recriados a cada inicialização, mas permanecem disponíveis enquanto o servidor estiver aberto.
 
