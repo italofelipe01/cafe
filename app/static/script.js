@@ -1,4 +1,37 @@
 document.addEventListener('DOMContentLoaded', function () {
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const transitionDuration = 140;
+
+    function startPageEnter() {
+        if (reducedMotion) return;
+        document.body.classList.add('page-enter');
+        window.setTimeout(() => {
+            document.body.classList.remove('page-enter');
+        }, 240);
+    }
+
+    function shouldTransitionTo(url) {
+        return url.origin === window.location.origin
+            && url.pathname + url.search !== window.location.pathname + window.location.search
+            && !url.hash;
+    }
+
+    function startPageExit(callback) {
+        if (reducedMotion) {
+            callback();
+            return;
+        }
+
+        document.body.classList.add('page-exit');
+        window.setTimeout(callback, transitionDuration);
+    }
+
+    startPageEnter();
+
+    window.addEventListener('pageshow', () => {
+        document.body.classList.remove('page-exit');
+    });
+
     const officeSelect = document.getElementById('office');
     const roomSelect = document.getElementById('room');
 
@@ -255,4 +288,32 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    document.addEventListener('click', event => {
+        const link = event.target.closest('a[href]');
+        if (!link || event.defaultPrevented) return;
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        if (link.target && link.target !== '_self') return;
+        if (link.hasAttribute('download') || link.dataset.noTransition === 'true') return;
+
+        const url = new URL(link.href, window.location.href);
+        if (!shouldTransitionTo(url)) return;
+
+        event.preventDefault();
+        startPageExit(() => {
+            window.location.href = url.href;
+        });
+    });
+
+    document.addEventListener('submit', event => {
+        const submittedForm = event.target;
+        if (!(submittedForm instanceof HTMLFormElement) || event.defaultPrevented) return;
+        if (submittedForm.dataset.noTransition === 'true' || submittedForm.dataset.transitioning === 'true') return;
+
+        event.preventDefault();
+        submittedForm.dataset.transitioning = 'true';
+        startPageExit(() => {
+            submittedForm.submit();
+        });
+    });
 });

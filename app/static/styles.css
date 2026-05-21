@@ -135,6 +135,52 @@ body {
     text-size-adjust: 100%;
 }
 
+body.page-enter .site-header,
+body.page-enter main {
+    animation: pageSlideIn 160ms ease-out both;
+}
+
+body.page-enter main {
+    animation-delay: 20ms;
+}
+
+body.page-exit .site-header,
+body.page-exit main {
+    animation: pageSlideOut 130ms ease-in both;
+    pointer-events: none;
+}
+
+@keyframes pageSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pageSlideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-14px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.page-enter .site-header,
+    body.page-enter main,
+    body.page-exit .site-header,
+    body.page-exit main {
+        animation: none;
+    }
+}
+
 h1, h2, h3, h4, h5, h6 {
     font-family: "Fedra Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: var(--color-text-main);
