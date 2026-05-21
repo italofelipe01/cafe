@@ -1,113 +1,86 @@
-# Coffee Request App
+# Espaço Café EBM
 
-This is a Flask application for managing coffee and service requests for meeting rooms across various offices.
+Aplicação Flask para solicitar itens de copa por sala e acompanhar pedidos pendentes em um painel operacional.
 
-## Project Structure
+## O que existe hoje
 
-```
-.
-├── app/
-│   ├── __init__.py    # Application factory
-│   ├── routes.py      # Route definitions
-│   ├── extensions.py  # Flsk-SQlite converter
-│   ├── models.py      # Database definitions
-│   ├── static/        # Static files (CSS, JS, images)
-│   └── templates/     # HTML templates
-├── config.py          # Configuration settings
-├── requirements.txt   # Project dependencies
-├── .gitignore         # Gitignore dependencies
-├── run.py             # Entry point
-└── tests/             # Unit tests
-```
+- Seleção de escritório e sala.
+- Cardápio configurado por seed no banco.
+- Pedido com múltiplos itens.
+- Confirmação do pedido.
+- Painel da copa em `/copa`, com atualização automática a cada 10 segundos.
+- API local para listar e concluir pedidos.
+- Testes automatizados com banco SQLite em memória.
 
-## Setup
+## Estrutura
 
-1.  **Clone the repository:**
-    ```bash
-    git clone <repository_url>
-    cd <repository_directory>
-    ```
-
-2.  **Create a virtual environment (recommended):**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-    ```
-
-3.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-## Development Mode
-
-To run the application in development mode (with debug features enabled and auto-reloading):
-
-**Linux/macOS:**
-```bash
-export DEBUG=True
-python run.py
+```text
+app/
+  __init__.py          # Factory, seed e comando init-db
+  extensions.py        # SQLAlchemy
+  models.py            # Office, Space, Product, Order, OrderItem
+  routes.py            # Rotas HTML e APIs
+  static/              # CSS, JS e imagens
+  templates/           # Templates Jinja
+config.py              # Configs default, development, testing e production
+run.py                 # Entrada local
+tests/                 # Testes e scripts auxiliares
 ```
 
-**Windows (CMD):**
-```bash
-set DEBUG=True
-python run.py
-```
+## Como rodar localmente
 
-**Windows (PowerShell):**
+Crie e ative um ambiente virtual:
+
 ```powershell
-$env:DEBUG="True"
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+Instale as dependências:
+
+```powershell
+pip install -r requirements.txt
+```
+
+Opcionalmente, copie `.env.example` para `.env` e ajuste porta/host:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Inicie o servidor:
+
+```powershell
 python run.py
 ```
 
-The application will start on `http://127.0.0.1:5000/`.
+Acesse:
 
-## Production Mode
+- Solicitação: http://127.0.0.1:5000/
+- Painel da copa: http://127.0.0.1:5000/copa
 
-For production environments, follow these steps:
+Por padrão, o app usa SQLite em memória para facilitar testes locais. Os dados são recriados a cada inicialização, mas permanecem disponíveis enquanto o servidor estiver aberto.
 
-1.  **Disable Debug Mode:**
-    Ensure `DEBUG` environment variable is NOT set to `True`. The application defaults to `DEBUG=False` if the variable is missing.
+Se quiser persistir os dados em arquivo, defina `DATABASE_URL` antes de iniciar:
 
-2.  **Set Secret Key:**
-    Set a strong `SECRET_KEY` environment variable to secure sessions.
-    ```bash
-    export SECRET_KEY='your-strong-random-secret-key'
-    ```
+```powershell
+$env:DATABASE_URL="sqlite:///cafe_dev.db"
+python run.py
+```
 
-3.  **Database:**
-    By default, SQLite is used. For production, you can set `DATABASE_URL` to point to a production database (e.g., PostgreSQL).
-    ```bash
-    export DATABASE_URL='postgresql://user:password@localhost/dbname'
-    ```
+Se iniciar em background com `python run.py --background`, o log fica em `cafe_server.log`.
 
-4.  **Use a WSGI Server:**
-    Do not use the built-in development server (`python run.py`) in production. Instead, use a production WSGI server like **Gunicorn**.
+## Como testar
 
-    First, install Gunicorn:
-    ```bash
-    pip install gunicorn
-    ```
-
-    Then run the application:
-    ```bash
-    gunicorn -w 4 -b 0.0.0.0:8000 run:app
-    ```
-    This will start the server with 4 workers on port 8000.
-
-## Usage
-
-1.  Select an office from the dropdown menu.
-2.  The application will fetch the available rooms for the selected office.
-3.  Select a room.
-4.  Fill out the request form (coffee, water, cleaning service).
-5.  Submit the form to view the confirmation page.
-
-## Testing
-
-To run the tests:
-
-```bash
+```powershell
 python -m unittest discover tests
 ```
+
+Os testes usam `sqlite:///:memory:`, então não alteram o banco local.
+
+## Próximas evoluções naturais
+
+- Migrations com Flask-Migrate/Alembic antes de produção real.
+- Tela admin para editar escritórios, salas e produtos sem alterar código.
+- Relatórios por período, sala, escritório e item.
+- Deploy com Waitress/Gunicorn e banco PostgreSQL quando deixar de ser experimento.
