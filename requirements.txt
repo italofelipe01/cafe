@@ -1,6 +1,10 @@
+# Para atualizar: suba a versão aqui, rode a suíte e registre no CHANGELOG.
 Flask
 Flask-SQLAlchemy
+Flask-Migrate
+Flask-WTF
+Flask-Limiter
 SQLAlchemy
-python-dotenv
 waitress
+python-dotenv
 tzdata

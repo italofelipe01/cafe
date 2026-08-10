@@ -1,0 +1,12 @@
+# Dependencias de desenvolvimento. Instale junto com as de execucao:
+#   pip install -r requirements.txt -r requirements-dev.txt
+
+-r requirements.txt
+
+# Lint e formatacao. O CI roda `ruff check .` e falha se houver achado.
+ruff
+
+# Calcula a proxima versao a partir dos commits. No CI roda pela action do
+# workflow de release; aqui serve para conferir antes de empurrar:
+#   semantic-release version --print
+python-semantic-release

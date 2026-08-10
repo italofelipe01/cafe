@@ -1,0 +1,100 @@
+[project]
+name = "espaco-cafe-ebm"
+version = "1.0.0"
+description = "Portal interno de solicitação de itens de copa por sala."
+requires-python = ">=3.11"
+
+# Versionamento semântico derivado das mensagens de commit.
+#
+# A versão não é escolhida à mão: o python-semantic-release lê os commits desde
+# a última tag e decide o incremento. Como o histórico do projeto já segue
+# Conventional Commits, a regra fica sendo a do próprio commit:
+#
+#   fix:              -> patch  (1.0.0 -> 1.0.1)
+#   feat:             -> minor  (1.0.0 -> 1.1.0)
+#   BREAKING CHANGE:  -> major  (1.0.0 -> 2.0.0)
+#   docs/chore/test/ci/refactor -> nenhum incremento
+#
+# Rodar localmente para ver o que sairia, sem alterar nada:
+#   semantic-release version --print
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+tag_format = "v{version}"
+commit_message = "chore(release): v{version}\n\nVersão gerada a partir dos commits desde a tag anterior. [skip ci]"
+build_command = ""
+# O CHANGELOG é escrito pelo próprio release, a partir dos commits.
+changelog_file = "CHANGELOG.md"
+
+[tool.semantic_release.branches.main]
+match = "(master|main)"
+
+[tool.semantic_release.changelog]
+# "update" insere a nova versão na marca abaixo em vez de reescrever o arquivo:
+# o texto da 1.0.0, escrito à mão, continua onde está.
+mode = "update"
+insertion_flag = "<!-- versoes -->"
+exclude_commit_patterns = ["chore\\(release\\):.*"]
+
+[tool.semantic_release.commit_parser_options]
+# Tipos que geram entrada no changelog, além dos que incrementam a versão.
+allowed_tags = [
+    "feat", "fix", "perf", "refactor", "docs", "style", "test", "build", "ci", "chore",
+]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# migrations/ é scaffold do Alembic e migrations geradas: código que não
+# escrevemos e que não deve ser reformatado a cada revisão.
+exclude = ["migrations", ".venv"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # bugbear
+    "UP",   # pyupgrade
+    "C4",   # comprehensions
+    "SIM",  # simplify
+]
+ignore = [
+    "E501",  # comprimento de linha: o formatador já cuida
+    "B008",  # chamada em argumento padrão: usado nos decoradores do Flask
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Os testes repetem literais e nomes longos de propósito, para serem legíveis.
+"tests/*" = ["E402"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "config"]
+
+# Verificação de tipos (Pylance no VS Code, ou pyright na linha de comando).
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+include = ["app", "tests", "config.py", "run.py"]
+exclude = [
+    # Definir `exclude` substitui a lista padrão do pyright em vez de somar a
+    # ela, então os padrões embutidos precisam ser repetidos aqui. O ambiente
+    # virtual aparece separado porque "**/.*" já o cobriria, mas a verificação
+    # do pyproject compara a lista literalmente e cobra o nome escrito.
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.*",
+    ".venv",
+
+    # Scaffold do Flask-Migrate e migrations geradas: código que não
+    # escrevemos e cujos avisos não cabe a nós corrigir.
+    "migrations",
+]
+
+# `exclude` só tira da varredura automática; um arquivo aberto no editor
+# continua sendo analisado. `ignore` é o que silencia os diagnósticos nele.
+ignore = ["migrations"]
+# Sem o venv resolvido, todo import de terceiro vira erro de "não encontrado".
+venvPath = "."
+venv = ".venv"

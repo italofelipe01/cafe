@@ -151,3 +151,56 @@ cython_debug/
 .vscode/
 .idea/
 *.swp
+*.swo
+*~
+
+# ==========================================================================
+# Específico do Espaço Café EBM
+# ==========================================================================
+
+# Ruff. Sem esta regra o diretório só fica de fora porque o próprio ruff grava
+# um .gitignore interno — o que se perde se a pasta for copiada ou recriada.
+.ruff_cache/
+
+# Bancos SQLite. O caminho normal é instance/ (já ignorado acima), mas
+# DATABASE_URL pode apontar para qualquer lugar, e o SQLite ainda cria os
+# arquivos auxiliares -journal, -wal e -shm ao lado do banco.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.sqlite3-journal
+
+# Variantes locais do arquivo de ambiente. Contêm SECRET_KEY, ADMIN_PASSWORD e
+# COPA_PASSWORD: nunca devem ser versionadas. O .env.example, sim — ele é o
+# modelo documentado e a exceção abaixo garante que continue rastreado.
+.env.*
+!.env.example
+
+# Saída dos passos de verificação do CI quando rodados na máquina local.
+segunda-execucao.txt
+
+# Arquivos temporários e de conflito
+*.bak
+*.tmp
+*.orig
+*.rej
+
+# Sistema operacional
+.DS_Store
+.AppleDouble
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ==========================================================================
+# Deve permanecer versionado
+# --------------------------------------------------------------------------
+# migrations/ é o histórico do esquema do banco: sem ele, `flask db upgrade`
+# não tem o que aplicar e cada ambiente diverge. Não adicione ao ignore — o
+# diretório de cache dentro dele já é coberto por __pycache__/ lá em cima.
+# ==========================================================================
