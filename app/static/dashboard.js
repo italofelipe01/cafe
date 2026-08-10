@@ -1,3 +1,10 @@
+/*
+ * Painel da copa: lista os pedidos pendentes, avisa quando chega um novo e
+ * conclui pedidos por um modal próprio.
+ *
+ * Depende de csrfToken() e postJson(), definidos em script.js.
+ */
+
 const ordersContainer = document.getElementById('orders-container');
 const dashboardError = document.getElementById('dashboard-error');
 const pendingCount = document.getElementById('pending-count');
@@ -7,8 +14,12 @@ const modalRoom = completeModal ? completeModal.querySelector('[data-modal-room]
 const modalCancel = completeModal ? completeModal.querySelector('[data-modal-cancel]') : null;
 const modalConfirm = completeModal ? completeModal.querySelector('[data-modal-confirm]') : null;
 const knownOrderIds = new Set();
+const REFRESH_INTERVAL = 10000;
+
 let firstLoad = true;
 let pendingCompletionOrder = null;
+let lastFocusedElement = null;
+
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function notifyNewOrder() {
@@ -31,7 +42,7 @@ function notifyNewOrder() {
         oscillator.start();
         oscillator.stop(context.currentTime + 0.28);
     } catch (error) {
-        console.debug('Notificacao sonora indisponivel.', error);
+        console.debug('Notificação sonora indisponível.', error);
     }
 }
 
@@ -88,7 +99,7 @@ function createOrderCard(order) {
     button.className = 'btn btn-success';
     button.type = 'button';
     button.textContent = 'Concluir';
-    button.addEventListener('click', () => openCompleteModal(order));
+    button.addEventListener('click', () => openCompleteModal(order, button));
 
     card.append(header, list, button);
     return card;
@@ -126,9 +137,22 @@ function checkNewOrders(orders) {
     firstLoad = false;
 }
 
+/** A sessão da copa expirou: manda para o login preservando o destino. */
+function redirectToLogin() {
+    window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+}
+
 async function fetchOrders() {
     try {
-        const response = await fetch('/api/orders');
+        const response = await fetch('/api/orders', {
+            headers: { 'Accept': 'application/json' }
+        });
+
+        if (response.status === 401) {
+            redirectToLogin();
+            return;
+        }
+
         if (!response.ok) throw new Error('Falha ao carregar pedidos.');
 
         const orders = await response.json();
@@ -136,18 +160,19 @@ async function fetchOrders() {
         renderOrders(orders);
         checkNewOrders(orders);
     } catch (error) {
-        setError('Nao foi possivel carregar os pedidos. Verifique se o servidor esta ativo.');
+        setError('Não foi possível carregar os pedidos. Verifique se o servidor está ativo.');
         console.error(error);
     }
 }
 
-function openCompleteModal(order) {
+function openCompleteModal(order, trigger) {
     if (!completeModal) {
         completeOrder(order.id);
         return;
     }
 
     pendingCompletionOrder = order;
+    lastFocusedElement = trigger || document.activeElement;
     if (modalRoom) modalRoom.textContent = order.room;
     completeModal.classList.remove('hidden');
     document.body.classList.add('modal-open');
@@ -160,6 +185,13 @@ function closeCompleteModal() {
     completeModal.classList.add('hidden');
     document.body.classList.remove('modal-open');
     pendingCompletionOrder = null;
+
+    // Devolve o foco a quem abriu o modal, para não perder o contexto de quem
+    // navega por teclado.
+    if (lastFocusedElement && document.contains(lastFocusedElement)) {
+        lastFocusedElement.focus();
+    }
+    lastFocusedElement = null;
 }
 
 function animateCompletedOrder(orderId) {
@@ -179,8 +211,23 @@ async function completeOrder(orderId) {
     if (modalConfirm) modalConfirm.disabled = true;
 
     try {
-        const response = await fetch(`/api/complete_order/${orderId}`, { method: 'POST' });
+        const response = await postJson(`/api/complete_order/${orderId}`, {});
+
+        if (response.status === 401) {
+            redirectToLogin();
+            return;
+        }
+
         const result = await response.json();
+
+        if (response.status === 409) {
+            // Outro operador chegou primeiro: recarrega em vez de reclamar.
+            closeCompleteModal();
+            setError('Este pedido já havia sido concluído. Lista atualizada.');
+            knownOrderIds.delete(orderId);
+            fetchOrders();
+            return;
+        }
 
         if (!response.ok || !result.success) {
             throw new Error(result.message || 'Falha ao concluir pedido.');
@@ -191,7 +238,7 @@ async function completeOrder(orderId) {
         await animateCompletedOrder(orderId);
         fetchOrders();
     } catch (error) {
-        setError('Nao foi possivel concluir o pedido.');
+        setError('Não foi possível concluir o pedido.');
         console.error(error);
     } finally {
         if (modalConfirm) modalConfirm.disabled = false;
@@ -222,4 +269,4 @@ if (completeModal) {
 }
 
 fetchOrders();
-setInterval(fetchOrders, 10000);
+setInterval(fetchOrders, REFRESH_INTERVAL);

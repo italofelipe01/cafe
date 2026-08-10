@@ -13,7 +13,8 @@
     <div class="alert alert-error" role="alert">{{ error }}</div>
     {% endif %}
 
-    <form action="{{ url_for('main.submit_form') }}" method="POST" class="form-plain order-form">
+    <form action="{{ url_for('main.submit_form') }}" method="POST" class="form-plain" data-order-form>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="office" value="{{ office.name if office is defined else office_name }}">
         <input type="hidden" name="room" value="{{ room.name if room is defined else room_name }}">
 

@@ -1,6 +1,36 @@
+/*
+ * Comportamentos globais: tema, transições de página, filtro de salas,
+ * filtros do admin e reordenação de insumos.
+ *
+ * Convenção: cada bloco é isolado por uma checagem de existência do elemento
+ * âncora, para que o mesmo arquivo sirva a todas as telas.
+ */
+
+/** Token CSRF da página, para as requisições JSON. */
+function csrfToken() {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.content : '';
+}
+
+/** POST em JSON já com o cabeçalho de CSRF. */
+function postJson(url, payload) {
+    return fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken()
+        },
+        body: JSON.stringify(payload)
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const transitionDuration = 140;
+
+    /* ------------------------------------------------------------------ */
+    /* Transições de página                                                */
+    /* ------------------------------------------------------------------ */
 
     function startPageEnter() {
         if (reducedMotion) return;
@@ -32,93 +62,122 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.classList.remove('page-exit');
     });
 
+    /* ------------------------------------------------------------------ */
+    /* Seleção de escritório e sala                                        */
+    /* ------------------------------------------------------------------ */
+
     const officeSelect = document.getElementById('office');
-    const roomSelect = document.getElementById('room');
+    const roomSelect = document.querySelector('[data-room-select]');
 
-    // Função para atualizar as salas com base no escritório selecionado
-    if (officeSelect) {
-        officeSelect.addEventListener('change', function () {
+    if (officeSelect && roomSelect) {
+        // As salas já vêm renderizadas e agrupadas por escritório, para que a
+        // página funcione sem JavaScript. Aqui apenas escondemos os grupos que
+        // não pertencem ao escritório escolhido.
+        const groups = Array.from(roomSelect.querySelectorAll('optgroup'));
+        const placeholder = roomSelect.querySelector('option[value=""]');
+
+        function applyRoomFilter() {
             const selectedOffice = officeSelect.value;
-            roomSelect.innerHTML = '<option value="">Carregando salas...</option>';
-            roomSelect.disabled = true;
+            let available = 0;
 
-            if (selectedOffice) {
-                fetch('/get_rooms', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ office: selectedOffice })
-                })
-                .then(response => response.json())
-                .then(rooms => {
-                    roomSelect.innerHTML = '<option value="">Selecione uma sala</option>';
-                    rooms.forEach(room => {
-                        const option = document.createElement('option');
-                        option.value = room;
-                        option.textContent = room;
-                        roomSelect.appendChild(option);
-                    });
-                    roomSelect.disabled = rooms.length === 0;
-                })
-                .catch(() => {
-                    roomSelect.innerHTML = '<option value="">Erro ao carregar salas</option>';
+            groups.forEach(group => {
+                const matches = !selectedOffice || group.dataset.office === selectedOffice;
+                group.hidden = !matches;
+                group.disabled = !matches;
+                Array.from(group.querySelectorAll('option')).forEach(option => {
+                    option.hidden = !matches;
+                    option.disabled = !matches;
+                    if (matches) available += 1;
                 });
-            } else {
-                roomSelect.innerHTML = '<option value="">Selecione uma sala</option>';
-                roomSelect.disabled = true;
-            }
-        });
-    }
-
-    // Task 1: Client-Side Form Validation
-    const form = document.querySelector('form[action="/submit_form"]');
-    if (form) {
-        form.addEventListener('submit', function (e) {
-            const numberInputs = form.querySelectorAll('input[type="number"]');
-            const serviceSelects = form.querySelectorAll('select');
-
-            let allZero = true;
-
-            // Check all number inputs
-            numberInputs.forEach(input => {
-                if (parseInt(input.value) > 0) {
-                    allZero = false;
-                }
             });
 
-            const serviceSelected = Array.from(serviceSelects).some(select => select.value === 'Sim');
-
-            if (allZero && !serviceSelected) {
-                e.preventDefault();
-                alert('Por favor, selecione pelo menos um item ou serviço.');
+            const selected = roomSelect.selectedOptions[0];
+            if (selected && selected.disabled) {
+                roomSelect.value = '';
             }
+
+            if (placeholder) {
+                placeholder.textContent = selectedOffice && available === 0
+                    ? 'Nenhuma sala disponível'
+                    : 'Selecione uma sala';
+            }
+
+            roomSelect.disabled = Boolean(selectedOffice) && available === 0;
+        }
+
+        officeSelect.addEventListener('change', applyRoomFilter);
+        applyRoomFilter();
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Validação do pedido                                                 */
+    /* ------------------------------------------------------------------ */
+
+    const orderForm = document.querySelector('[data-order-form]');
+    if (orderForm) {
+        const feedback = document.createElement('div');
+        feedback.className = 'alert alert-error hidden';
+        feedback.setAttribute('role', 'alert');
+        orderForm.prepend(feedback);
+
+        orderForm.addEventListener('submit', function (event) {
+            const quantities = Array.from(orderForm.querySelectorAll('input[type="number"]'));
+            const services = Array.from(orderForm.querySelectorAll('select'));
+
+            const hasQuantity = quantities.some(input => parseInt(input.value, 10) > 0);
+            const hasService = services.some(select => select.value === 'Sim');
+
+            if (hasQuantity || hasService) {
+                feedback.classList.add('hidden');
+                return;
+            }
+
+            // Mensagem no fluxo da página, e não um alert() do navegador — o
+            // portal já usa modal e alertas próprios em todas as outras telas.
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            feedback.textContent = 'Selecione pelo menos um item ou serviço.';
+            feedback.classList.remove('hidden');
+            feedback.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' });
         });
     }
 
-    // Task 2: Manual Dark/Light Mode Toggle
+    /* ------------------------------------------------------------------ */
+    /* Tema                                                                */
+    /* ------------------------------------------------------------------ */
+
     const toggleButton = document.getElementById('theme-toggle');
     const logos = document.querySelectorAll('[data-theme-logo]');
     const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    const root = document.documentElement;
+
+    function readStoredTheme() {
+        try {
+            const saved = localStorage.getItem('theme');
+            return saved === 'dark' || saved === 'light' ? saved : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function storeTheme(theme) {
+        try {
+            localStorage.setItem('theme', theme);
+        } catch (error) {
+            /* Modo privativo: o tema vale só para esta navegação. */
+        }
+    }
 
     function applyTheme() {
-        const savedTheme = localStorage.getItem('theme');
+        const savedTheme = readStoredTheme();
         const isDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark.matches);
 
-        // Apply classes to body
-        if (savedTheme === 'dark') {
-            document.body.classList.add('dark-mode');
-            document.body.classList.remove('light-mode');
-        } else if (savedTheme === 'light') {
-            document.body.classList.add('light-mode');
-            document.body.classList.remove('dark-mode');
+        if (savedTheme) {
+            root.dataset.theme = savedTheme;
         } else {
-            // System default: remove manual classes
-            document.body.classList.remove('dark-mode');
-            document.body.classList.remove('light-mode');
+            delete root.dataset.theme;
         }
 
-        // Update Logo and Button Icon
         updateVisuals(isDark);
     }
 
@@ -133,6 +192,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (iconSpan) {
                 iconSpan.textContent = isDark ? '🌙' : '☀️';
             }
+            toggleButton.setAttribute(
+                'aria-label',
+                isDark ? 'Mudar para o tema claro' : 'Mudar para o tema escuro'
+            );
         }
     }
 
@@ -147,36 +210,31 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function toggleTheme() {
-        const savedTheme = localStorage.getItem('theme');
-        let newTheme;
+        const savedTheme = readStoredTheme();
+        const newTheme = savedTheme
+            ? (savedTheme === 'dark' ? 'light' : 'dark')
+            : (systemPrefersDark.matches ? 'light' : 'dark');
 
-        if (savedTheme) {
-            // If already manual, switch to the other
-            newTheme = savedTheme === 'dark' ? 'light' : 'dark';
-        } else {
-            // If system, switch to the opposite of system
-            newTheme = systemPrefersDark.matches ? 'light' : 'dark';
-        }
-
-        localStorage.setItem('theme', newTheme);
+        storeTheme(newTheme);
         applyTheme();
         animateThemeShift();
     }
 
-    // Initial Application
     applyTheme();
 
-    // Event Listener for Toggle Button
     if (toggleButton) {
         toggleButton.addEventListener('click', toggleTheme);
     }
 
-    // Listen for System Preference Changes (only affects if no manual override)
     systemPrefersDark.addEventListener('change', () => {
-        if (!localStorage.getItem('theme')) {
+        if (!readStoredTheme()) {
             applyTheme();
         }
     });
+
+    /* ------------------------------------------------------------------ */
+    /* Filtros da tela de salas                                            */
+    /* ------------------------------------------------------------------ */
 
     const spaceFilters = document.querySelector('[data-space-filters]');
     if (spaceFilters) {
@@ -189,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return value
                 .toLowerCase()
                 .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '');
+                .replace(/\p{Diacritic}/gu, '');
         }
 
         function applySpaceFilters() {
@@ -215,10 +273,15 @@ document.addEventListener('DOMContentLoaded', function () {
         applySpaceFilters();
     }
 
+    /* ------------------------------------------------------------------ */
+    /* Ordenação de insumos: mouse e teclado                               */
+    /* ------------------------------------------------------------------ */
+
     const sortableList = document.querySelector('[data-product-sort-list]');
     if (sortableList) {
         const status = document.querySelector('[data-product-sort-status]');
         let draggingRow = null;
+        let orderAtDragStart = [];
 
         function setStatus(message, isError = false) {
             if (!status) return;
@@ -228,6 +291,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         function getRows() {
             return Array.from(sortableList.querySelectorAll('[data-product-id]'));
+        }
+
+        function currentOrder() {
+            return getRows().map(row => row.dataset.productId);
         }
 
         function getDragAfterElement(y) {
@@ -246,14 +313,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         async function saveProductOrder() {
-            const productIds = getRows().map(row => row.dataset.productId);
+            const productIds = currentOrder();
             setStatus('Salvando nova ordem...');
 
             try {
-                const response = await fetch(sortableList.dataset.reorderUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ product_ids: productIds })
+                const response = await postJson(sortableList.dataset.reorderUrl, {
+                    product_ids: productIds
                 });
                 const result = await response.json();
 
@@ -268,6 +333,30 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+        function sameOrder(a, b) {
+            return a.length === b.length && a.every((value, index) => value === b[index]);
+        }
+
+        /** Move a linha uma posição e devolve true se a ordem mudou. */
+        function moveRow(row, direction) {
+            const rows = getRows();
+            const index = rows.indexOf(row);
+            const target = index + direction;
+
+            if (target < 0 || target >= rows.length) {
+                setStatus(direction < 0 ? 'Já é o primeiro item.' : 'Já é o último item.');
+                return false;
+            }
+
+            if (direction < 0) {
+                sortableList.insertBefore(row, rows[target]);
+            } else {
+                sortableList.insertBefore(rows[target], row);
+            }
+
+            return true;
+        }
+
         getRows().forEach(row => {
             row.addEventListener('dragstart', event => {
                 if (event.target.closest('input, select, button') && !event.target.closest('.drag-handle')) {
@@ -276,6 +365,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 draggingRow = row;
+                orderAtDragStart = currentOrder();
                 row.classList.add('is-dragging');
                 event.dataTransfer.effectAllowed = 'move';
             });
@@ -283,7 +373,26 @@ document.addEventListener('DOMContentLoaded', function () {
             row.addEventListener('dragend', () => {
                 row.classList.remove('is-dragging');
                 draggingRow = null;
-                saveProductOrder();
+
+                // Só grava se a posição realmente mudou: arrastar e soltar no
+                // mesmo lugar não precisa de requisição.
+                if (!sameOrder(orderAtDragStart, currentOrder())) {
+                    saveProductOrder();
+                }
+            });
+
+            const handle = row.querySelector('[data-sort-handle]');
+            if (!handle) return;
+
+            handle.addEventListener('keydown', event => {
+                const direction = event.key === 'ArrowUp' ? -1 : event.key === 'ArrowDown' ? 1 : 0;
+                if (!direction) return;
+
+                event.preventDefault();
+                if (moveRow(row, direction)) {
+                    handle.focus();
+                    saveProductOrder();
+                }
             });
         });
 
@@ -299,6 +408,10 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    /* ------------------------------------------------------------------ */
+    /* Transição em links e formulários                                    */
+    /* ------------------------------------------------------------------ */
 
     document.addEventListener('click', event => {
         const link = event.target.closest('a[href]');
@@ -323,6 +436,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
         event.preventDefault();
         submittedForm.dataset.transitioning = 'true';
+
+        // form.submit() ignora o botão que disparou o envio, então o par
+        // name/value dele seria perdido. Reinserimos como campo oculto antes
+        // de reenviar, para que o formulário chegue ao servidor idêntico ao
+        // que o usuário submeteu.
+        const submitter = event.submitter;
+        if (submitter && submitter.name) {
+            const carried = document.createElement('input');
+            carried.type = 'hidden';
+            carried.name = submitter.name;
+            carried.value = submitter.value;
+            submittedForm.appendChild(carried);
+        }
+
         startPageExit(() => {
             submittedForm.submit();
         });

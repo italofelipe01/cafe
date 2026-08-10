@@ -15,6 +15,8 @@
     {% endif %}
 
     <form id="officeForm" class="form-plain" method="POST" action="{{ url_for('main.select_room') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <label for="office">Escritório</label>
         <select id="office" name="office" required class="form-control">
             <option value="">Selecione um escritório</option>
@@ -24,9 +26,26 @@
         </select>
 
         <label for="room">Sala</label>
-        <select id="room" name="room" required class="form-control" disabled>
+        {#
+          Todas as salas ativas são renderizadas de uma vez, agrupadas por
+          escritório. Com JavaScript, o script filtra as que não pertencem ao
+          escritório escolhido. Sem JavaScript, os optgroups já dizem a qual
+          unidade cada sala pertence e o formulário continua utilizável.
+        #}
+        <select id="room" name="room" required class="form-control" data-room-select>
             <option value="">Selecione uma sala</option>
+            {% for office, spaces in catalog %}
+            <optgroup label="{{ office.name }}" data-office="{{ office.name }}">
+                {% for space in spaces %}
+                <option value="{{ space.name }}" data-office="{{ office.name }}">{{ space.name }}</option>
+                {% endfor %}
+            </optgroup>
+            {% endfor %}
         </select>
+
+        <noscript>
+            <p class="form-note">Selecione a sala dentro do grupo do escritório escolhido.</p>
+        </noscript>
 
         <button type="submit" class="btn btn-primary">Avançar</button>
     </form>

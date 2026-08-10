@@ -34,9 +34,17 @@
     --control-min-height: 44px;
 }
 
-/* Dark Mode Overrides */
+/*
+ * Tema
+ * ----
+ * O tema é decidido por `data-theme` no elemento <html>, escrito por um script
+ * inline no <head> antes da primeira pintura. São três estados: "light" e
+ * "dark" explícitos, e a ausência do atributo, que segue o sistema. Por isso o
+ * bloco do sistema é guardado por :not([data-theme="light"]) — uma escolha
+ * manual pelo tema claro precisa vencer um sistema em modo escuro.
+ */
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
         --color-bg-body: #1a1a1a; /* Dark Charcoal */
         --color-bg-card: #2c2c2c; /* Slightly lighter dark for cards */
         --color-text-main: #DED3BD; /* Beige text */
@@ -53,8 +61,8 @@
     }
 }
 
-/* Manual Mode Overrides */
-.light-mode {
+/* Escolha manual: tema claro */
+:root[data-theme="light"] {
     --color-bg-body: #FFFFFF;
     --color-bg-card: #FFFFFF;
     --color-text-main: #1B2C5D;
@@ -70,7 +78,8 @@
     --color-table-border: #ddd;
 }
 
-.dark-mode {
+/* Escolha manual: tema escuro */
+:root[data-theme="dark"] {
     --color-bg-body: #1a1a1a;
     --color-bg-card: #2c2c2c;
     --color-text-main: #DED3BD;
@@ -557,13 +566,19 @@ th {
 }
 
 .panel {
+    /* Publicado como variável para que faixas full-bleed (banner de sucesso,
+       banner de erro) derivem a margem negativa em vez de repetir o valor —
+       assim continuam encostando nas bordas em todos os breakpoints. */
+    --panel-padding-x: 32px;
+    --panel-padding-y: 32px;
+
     background-color: var(--color-bg-card);
     border: 1px solid var(--color-border);
     border-radius: 8px;
     box-shadow: 0 4px 10px var(--color-shadow);
     box-sizing: border-box;
     margin: 20px auto;
-    padding: 32px;
+    padding: var(--panel-padding-y) var(--panel-padding-x);
     width: 100%;
     max-width: var(--panel-wide-max);
 }
@@ -684,8 +699,9 @@ th {
 .success-banner {
     background-color: var(--color-success);
     color: #FFFFFF;
-    margin: 0 -32px 24px -32px;
-    padding: 22px 32px;
+    /* Mantém o respiro acima da faixa, como na tela de confirmação de pedido. */
+    margin: 0 calc(var(--panel-padding-x) * -1) 24px;
+    padding: 22px var(--panel-padding-x);
     text-align: center;
 }
 
@@ -1099,7 +1115,8 @@ th {
     }
 
     .panel {
-        padding: 40px;
+        --panel-padding-x: 40px;
+        --panel-padding-y: 40px;
     }
 }
 
@@ -1117,7 +1134,8 @@ th {
     }
 
     .panel {
-        padding: 28px 22px;
+        --panel-padding-x: 22px;
+        --panel-padding-y: 28px;
     }
 
     .site-header {
@@ -1186,8 +1204,10 @@ th {
     }
 
     .panel {
+        --panel-padding-x: 16px;
+        --panel-padding-y: 24px;
+
         margin: 12px 0;
-        padding: 24px 16px;
     }
 
     .order-row,
@@ -1205,10 +1225,6 @@ th {
         grid-template-columns: 1fr;
     }
 
-    .success-banner {
-        margin-left: -16px;
-        margin-right: -16px;
-    }
 
     .summary-list li,
     .order-items li {
@@ -1232,4 +1248,197 @@ th {
         padding-left: 14px;
         padding-right: 14px;
     }
+}
+
+/* ==========================================================================
+   Acesso, erros e histórico
+   ========================================================================== */
+
+.nav-session-form {
+    display: inline;
+    margin: 0;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    font: inherit;
+    margin: 0;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.btn-link:hover {
+    color: var(--color-primary-red);
+}
+
+.form-note {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    margin: 6px 0 0;
+}
+
+/* --------------------------------------------------------------------------
+   Páginas de erro
+   --------------------------------------------------------------------------
+   Reaproveitam o `panel` das demais telas. A faixa do topo usa o mesmo recurso
+   full-bleed de `.success-banner` — margens negativas do tamanho do padding do
+   painel — para encostar nas bordas, com os cantos superiores arredondados
+   acompanhando o raio do painel.
+   -------------------------------------------------------------------------- */
+
+.error-panel {
+    overflow: hidden;
+}
+
+.error-banner {
+    border-radius: 8px 8px 0 0;
+    color: #FFFFFF;
+    margin: calc(var(--panel-padding-y) * -1) calc(var(--panel-padding-x) * -1) 24px;
+    padding: 26px var(--panel-padding-x) 22px;
+    text-align: center;
+}
+
+.error-banner-alert {
+    background-color: var(--color-primary-red);
+}
+
+.error-banner-info {
+    background-color: var(--color-primary-blue);
+}
+
+.error-banner .eyebrow {
+    color: rgba(255, 255, 255, 0.82);
+    margin-bottom: 4px;
+}
+
+.error-code {
+    font-size: clamp(2.6rem, 9vw, 3.6rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin: 0;
+}
+
+.error-panel .page-heading {
+    margin-bottom: 20px;
+}
+
+.error-panel .page-heading h1 {
+    font-size: 1.4rem;
+}
+
+.error-panel .page-heading p {
+    margin: 0 auto;
+    max-width: 46ch;
+}
+
+.error-help {
+    background-color: var(--color-bg-body);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    color: var(--color-text-secondary);
+    display: grid;
+    gap: 10px;
+    list-style: none;
+    margin: 0;
+    padding: 18px 20px;
+}
+
+.error-help li {
+    line-height: 1.5;
+    padding-left: 20px;
+    position: relative;
+}
+
+.error-help li::before {
+    color: var(--color-primary-red);
+    content: "2";
+    font-weight: 700;
+    left: 4px;
+    position: absolute;
+    top: 0;
+}
+
+.error-help strong {
+    color: var(--color-text-main);
+    font-weight: 700;
+}
+
+.error-panel .actions {
+    margin-top: 22px;
+}
+
+.filter-actions {
+    align-items: flex-end;
+    display: flex;
+    gap: 10px;
+}
+
+.pagination {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 18px;
+}
+
+.pagination-status {
+    color: var(--color-text-secondary);
+    font-size: 0.92rem;
+}
+
+.cell-id {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.cell-time {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.cell-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.cell-items li {
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+}
+
+.cell-items strong {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ==========================================================================
+   Foco visível
+   --------------------------------------------------------------------------
+   Um único indicador de foco para todos os controles interativos, para que a
+   navegação por teclado — inclusive a reordenação de insumos pelas setas —
+   tenha sempre um alvo evidente.
+   ========================================================================== */
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+    outline: 3px solid var(--color-primary-red);
+    outline-offset: 2px;
+}
+
+.drag-handle:focus-visible {
+    background-color: var(--color-primary-red);
+    color: #FFFFFF;
 }
