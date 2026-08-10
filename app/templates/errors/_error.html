@@ -1,0 +1,42 @@
+{#
+  Layout das páginas de erro.
+
+  Segue o mesmo vocabulário das telas do portal: um `panel` centralizado, faixa
+  full-bleed no topo — o mesmo recurso de `.success-banner` na confirmação de
+  pedido —, texto de apoio e a grade `.actions` para as saídas possíveis.
+
+  Cada página filha preenche quatro blocos:
+    error_code     código HTTP, também usado no <title>
+    error_heading  o que aconteceu, em uma linha
+    error_help     o que a pessoa pode fazer (lista de itens)
+    error_actions  botões de saída
+#}
+{% extends "base.html" %}
+
+{% block title %}{% block error_code %}Erro{% endblock %} | Espaço Café EBM{% endblock %}
+
+{% block main_class %}app-shell{% endblock %}
+
+{% block content %}
+<section class="panel panel-narrow error-panel">
+    <div class="error-banner {% block error_tone %}error-banner-alert{% endblock %}">
+        <p class="eyebrow">{% block error_label %}Erro{% endblock %}</p>
+        <p class="error-code">{{ self.error_code() }}</p>
+    </div>
+
+    <div class="page-heading">
+        <h1>{% block error_heading %}Algo deu errado{% endblock %}</h1>
+        {% if message %}
+        <p>{{ message }}</p>
+        {% endif %}
+    </div>
+
+    {% block error_help %}{% endblock %}
+
+    {% block error_actions %}
+    <div class="actions single-action">
+        <a href="{{ url_for('main.index') }}" class="btn btn-primary">Ir para o pedido</a>
+    </div>
+    {% endblock %}
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "errors/_error.html" %}
+
+{% block error_code %}401{% endblock %}
+{% block error_tone %}error-banner-info{% endblock %}
+{% block error_label %}Acesso restrito{% endblock %}
+{% block error_heading %}Esta área exige senha{% endblock %}
+
+{% block error_help %}
+<ul class="error-help">
+    <li>O painel da copa e a administração são internos e pedem autenticação.</li>
+    <li>O formulário de pedido continua aberto, sem necessidade de senha.</li>
+    <li>Se a sessão expirou, basta entrar de novo.</li>
+</ul>
+{% endblock %}
+
+{% block error_actions %}
+<div class="actions">
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Ir para o pedido</a>
+    <a href="{{ url_for('main.login') }}" class="btn btn-primary">Entrar</a>
+</div>
+{% endblock %}

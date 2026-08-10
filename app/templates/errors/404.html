@@ -1,0 +1,21 @@
+{% extends "errors/_error.html" %}
+
+{% block error_code %}404{% endblock %}
+{% block error_label %}Página não encontrada{% endblock %}
+{% block error_heading %}Este endereço não existe{% endblock %}
+
+{% block error_help %}
+<ul class="error-help">
+    <li>O link pode estar desatualizado ou ter sido digitado com um caractere a mais.</li>
+    <li>O pedido começa em <strong>/</strong>, o painel da copa em <strong>/copa</strong> e a administração em <strong>/admin</strong>.</li>
+</ul>
+{% endblock %}
+
+{% block error_actions %}
+<div class="actions{% if not can_copa %} single-action{% endif %}">
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary">Ir para o pedido</a>
+    {% if can_copa %}
+    <a href="{{ url_for('main.copa_dashboard') }}" class="btn btn-secondary">Painel da copa</a>
+    {% endif %}
+</div>
+{% endblock %}

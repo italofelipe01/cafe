@@ -1,0 +1,20 @@
+{% extends "errors/_error.html" %}
+
+{% block error_code %}400{% endblock %}
+{% block error_label %}Requisição inválida{% endblock %}
+{% block error_heading %}Não foi possível processar o envio{% endblock %}
+
+{% block error_help %}
+<ul class="error-help">
+    <li>Se a página ficou aberta por muito tempo, recarregue antes de enviar de novo.</li>
+    <li>Confira se todos os campos obrigatórios foram preenchidos.</li>
+    <li>Quantidades aceitam apenas números inteiros, de 0 a 1000.</li>
+</ul>
+{% endblock %}
+
+{% block error_actions %}
+<div class="actions">
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Ir para o pedido</a>
+    <a href="{{ request.full_path.rstrip('?') }}" class="btn btn-primary" data-no-transition="true">Recarregar</a>
+</div>
+{% endblock %}

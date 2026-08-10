@@ -1,477 +1,471 @@
-import re
-import unicodedata
+"""Rotas HTTP.
 
-from app.extensions import db
-from app.models import Office, Order, OrderItem, Product, Space, STATUS_COMPLETED, STATUS_PENDING, local_now
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
-from sqlalchemy import func
+Cada view faz três coisas: lê a requisição, chama uma função de ``app.services``
+e escolhe a resposta. Validação e acesso a dados ficam na camada de serviço.
+"""
 
+from __future__ import annotations
+
+from collections.abc import Callable
+from functools import wraps
+
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+from flask.typing import ResponseReturnValue
+
+from app import audit, services
+from app.extensions import csrf, limiter
+from app.security import (
+    ROLE_ADMIN,
+    ROLE_COPA,
+    ROLE_LABELS,
+    authenticate,
+    current_roles,
+    grant_role,
+    is_authenticated,
+    login_required,
+    revoke_roles,
+    safe_redirect_target,
+)
+from app.services import NotFoundError, ServiceError
 
 bp = Blueprint("main", __name__)
-MAX_QUANTITY = 1000
 
 
-def active_products():
-    return Product.query.filter_by(active=True).order_by(Product.sort_order.asc()).all()
+def order_rate_limit() -> str:
+    return current_app.config["RATELIMIT_ORDER"]
 
 
-def active_offices():
-    return (
-        Office.query.join(Office.spaces)
-        .filter(Office.active.is_(True), Space.active.is_(True))
-        .distinct()
-        .order_by(Office.name.asc())
-        .all()
-    )
+def login_rate_limit() -> str:
+    return current_app.config["RATELIMIT_LOGIN"]
 
 
-def find_space(office_name, space_name):
-    return (
-        Space.query.join(Space.office)
-        .filter(Space.active.is_(True), Space.name == space_name)
-        .filter(Office.active.is_(True), Office.name == office_name)
-        .first()
-    )
+@bp.app_context_processor
+def inject_session_state() -> dict[str, object]:
+    """Disponibiliza o estado de acesso para o layout base."""
+
+    return {
+        "is_authenticated": is_authenticated(),
+        "session_roles": sorted(current_roles()),
+        "can_admin": ROLE_ADMIN in current_roles(),
+        "can_copa": ROLE_COPA in current_roles(),
+        "role_labels": ROLE_LABELS,
+    }
 
 
-def parse_quantity(raw_value):
-    if raw_value in (None, ""):
-        return 0
+def admin_form_action(redirect_endpoint: str) -> Callable:
+    """Executa uma ação de administração traduzindo falhas em mensagens flash.
 
-    try:
-        quantity = int(raw_value)
-    except (TypeError, ValueError):
-        raise ValueError("Use apenas números inteiros nas quantidades.")
+    As seis telas administrativas repetiam o mesmo bloco de buscar registro,
+    dar ``flash`` e redirecionar. Agora a view só descreve o que quer fazer.
+    """
 
-    if quantity < 0:
-        raise ValueError("As quantidades não podem ser negativas.")
+    def decorator(view: Callable) -> Callable:
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+            try:
+                message = view(*args, **kwargs)
+            except ServiceError as error:
+                flash(error.message, "error")
+            else:
+                if message:
+                    flash(message, "success")
 
-    if quantity > MAX_QUANTITY:
-        raise ValueError(f"As quantidades não podem passar de {MAX_QUANTITY}.")
+            return redirect(url_for(redirect_endpoint))
 
-    return quantity
+        return wrapped
 
-
-def collect_order_items(form):
-    items = []
-
-    for product in active_products():
-        if product.input_type == "boolean":
-            selected = form.get(product.form_key) == "Sim"
-            if selected:
-                items.append((product, 1))
-            continue
-
-        quantity = parse_quantity(form.get(product.form_key, 0))
-        if quantity > 0:
-            items.append((product, quantity))
-
-    if not items:
-        raise ValueError("Selecione pelo menos um item ou serviço.")
-
-    return items
+    return decorator
 
 
-def slugify(value):
-    normalized = unicodedata.normalize("NFKD", value)
-    ascii_value = normalized.encode("ascii", "ignore").decode("ascii")
-    slug = re.sub(r"[^a-zA-Z0-9]+", "_", ascii_value).strip("_").lower()
-    return slug or "item"
+# --------------------------------------------------------------------------- #
+# Acesso
+# --------------------------------------------------------------------------- #
+
+@bp.route("/login", methods=["GET", "POST"])
+@limiter.limit(login_rate_limit, methods=["POST"])
+def login() -> ResponseReturnValue:
+    destination = safe_redirect_target(request.values.get("next"))
+
+    if request.method == "POST":
+        role = authenticate(request.form.get("password", ""))
+
+        if not role:
+            audit("login.falha")
+            return (
+                render_template(
+                    "login.html",
+                    error="Senha incorreta.",
+                    next_url=destination,
+                ),
+                401,
+            )
+
+        session.clear()
+        grant_role(role)
+        audit("login.sucesso", perfil=role)
+        flash(f"Acesso liberado: {ROLE_LABELS[role]}.", "success")
+        return redirect(destination or default_landing())
+
+    return render_template("login.html", next_url=destination)
 
 
-def unique_product_key(name, product_id=None):
-    base_key = slugify(name)
-    candidate = base_key
-    suffix = 2
-
-    while True:
-        query = Product.query.filter_by(form_key=candidate)
-        if product_id:
-            query = query.filter(Product.id != product_id)
-
-        if not query.first():
-            return candidate
-
-        candidate = f"{base_key}_{suffix}"
-        suffix += 1
+def default_landing() -> str:
+    if ROLE_ADMIN in current_roles():
+        return url_for("main.admin_dashboard")
+    if ROLE_COPA in current_roles():
+        return url_for("main.copa_dashboard")
+    return url_for("main.index")
 
 
-def next_product_sort_order():
-    current_max = db.session.query(func.max(Product.sort_order)).scalar()
-    return (current_max or 0) + 1
+@bp.route("/logout", methods=["POST"])
+def logout() -> ResponseReturnValue:
+    audit("logout")
+    revoke_roles()
+    session.clear()
+    flash("Sessão encerrada.", "success")
+    return redirect(url_for("main.index"))
 
+
+# --------------------------------------------------------------------------- #
+# Pedido (público)
+# --------------------------------------------------------------------------- #
 
 @bp.route("/")
-def index():
-    return render_template("index.html", offices=active_offices())
+def index() -> str:
+    return render_template(
+        "index.html",
+        offices=services.active_offices(),
+        catalog=services.active_catalog_by_office(),
+    )
 
 
-@bp.route("/get_rooms", methods=["POST"])
-def get_rooms():
-    selected_office_name = None
+@bp.route("/api/rooms", methods=["GET"])
+@bp.route("/get_rooms", methods=["GET", "POST"])
+@csrf.exempt
+def get_rooms() -> ResponseReturnValue:
+    """Salas ativas de um escritório.
 
-    if request.is_json:
-        data = request.get_json(silent=True)
-        if isinstance(data, dict):
-            selected_office_name = data.get("office")
-    else:
-        selected_office_name = request.form.get("office")
+    Consulta sem efeito colateral, por isso isenta de CSRF. Aceita o POST
+    histórico e o GET, que é a forma correta para uma leitura.
+    """
 
-    if not selected_office_name:
+    office_name = request.args.get("office")
+
+    if not office_name and request.method == "POST":
+        if request.is_json:
+            data = request.get_json(silent=True)
+            office_name = data.get("office") if isinstance(data, dict) else None
+        else:
+            office_name = request.form.get("office")
+
+    if not office_name:
         return jsonify([])
 
-    spaces = (
-        Space.query.join(Space.office)
-        .filter(
-            Space.active.is_(True),
-            Office.active.is_(True),
-            Office.name == selected_office_name,
-        )
-        .order_by(Space.name.asc())
-        .all()
-    )
-    return jsonify([space.name for space in spaces])
+    return jsonify([space.name for space in services.active_spaces_for(office_name)])
 
 
 @bp.route("/select_room", methods=["POST"])
-def select_room():
-    selected_office = request.form.get("office", "")
-    selected_room = request.form.get("room", "")
-    space = find_space(selected_office, selected_room)
-
-    if not space:
-        return render_template(
-            "index.html",
-            offices=active_offices(),
-            error="Escolha um escritório e uma sala válidos.",
-        ), 400
+def select_room() -> ResponseReturnValue:
+    try:
+        space = services.require_space(
+            request.form.get("office", ""), request.form.get("room", "")
+        )
+    except ServiceError as error:
+        return (
+            render_template(
+                "index.html",
+                offices=services.active_offices(),
+                catalog=services.active_catalog_by_office(),
+                error=error.message,
+            ),
+            error.status_code,
+        )
 
     return render_template(
         "sala_form.html",
         office=space.office,
         room=space,
-        products=active_products(),
+        products=services.active_products(),
     )
 
 
 @bp.route("/submit_form", methods=["POST"])
-def submit_form():
+@limiter.limit(order_rate_limit)
+def submit_form() -> ResponseReturnValue:
     office_name = request.form.get("office", "")
     room_name = request.form.get("room", "")
-    space = find_space(office_name, room_name)
-
-    if not space:
-        return render_template(
-            "sala_form.html",
-            office_name=office_name,
-            room_name=room_name,
-            products=active_products(),
-            error="Escritório ou sala inválidos. Volte e selecione novamente.",
-        ), 400
 
     try:
-        requested_items = collect_order_items(request.form)
-    except ValueError as exc:
-        return render_template(
-            "sala_form.html",
-            office=space.office,
-            room=space,
-            products=active_products(),
-            error=str(exc),
-        ), 400
+        space = services.require_space(office_name, room_name)
+    except ServiceError:
+        return (
+            render_template(
+                "sala_form.html",
+                office_name=office_name,
+                room_name=room_name,
+                products=services.active_products(),
+                error="Escritório ou sala inválidos. Volte e selecione novamente.",
+            ),
+            400,
+        )
 
-    new_order = Order(office=space.office, space=space, created_at=local_now())
-    for product, quantity in requested_items:
-        new_order.items.append(OrderItem(product=product, quantity=quantity))
+    try:
+        requested_items = services.collect_order_items(request.form)
+    except ServiceError as error:
+        return (
+            render_template(
+                "sala_form.html",
+                office=space.office,
+                room=space,
+                products=services.active_products(),
+                error=error.message,
+            ),
+            error.status_code,
+        )
 
-    db.session.add(new_order)
-    db.session.commit()
+    order = services.create_order(space, requested_items)
+    audit("pedido.criado", pedido=order.id, sala=space.name, itens=len(requested_items))
 
     return render_template(
-        "confirm_pedido.html",
-        order=new_order,
-        requested_items=new_order.items,
+        "confirm_pedido.html", order=order, requested_items=order.items
     )
 
 
+# --------------------------------------------------------------------------- #
+# Painel da copa
+# --------------------------------------------------------------------------- #
+
 @bp.route("/copa")
-def copa_dashboard():
+@login_required(ROLE_COPA)
+def copa_dashboard() -> str:
     return render_template("copa_dashboard.html")
 
 
-@bp.route("/admin")
-def admin_dashboard():
-    stats = {
-        "offices": Office.query.count(),
-        "spaces": Space.query.count(),
-        "products": Product.query.count(),
-        "pending_orders": Order.query.filter_by(status=STATUS_PENDING).count(),
-    }
-    return render_template("admin/dashboard.html", stats=stats)
-
-
-@bp.route("/admin/offices", methods=["GET", "POST"])
-def admin_offices():
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        if not name:
-            flash("Informe o nome do escritório.", "error")
-            return redirect(url_for("main.admin_offices"))
-
-        if Office.query.filter_by(name=name).first():
-            flash("Já existe um escritório com esse nome.", "error")
-            return redirect(url_for("main.admin_offices"))
-
-        db.session.add(Office(name=name, active=True))
-        db.session.commit()
-        flash("Escritório cadastrado.", "success")
-        return redirect(url_for("main.admin_offices"))
-
-    offices = Office.query.order_by(Office.name.asc()).all()
-    return render_template("admin/offices.html", offices=offices)
-
-
-@bp.route("/admin/offices/<int:office_id>/update", methods=["POST"])
-def admin_update_office(office_id):
-    office = db.session.get(Office, office_id)
-    if not office:
-        flash("Escritório não encontrado.", "error")
-        return redirect(url_for("main.admin_offices"))
-
-    name = request.form.get("name", "").strip()
-    if not name:
-        flash("Informe o nome do escritório.", "error")
-        return redirect(url_for("main.admin_offices"))
-
-    duplicate = Office.query.filter(Office.name == name, Office.id != office.id).first()
-    if duplicate:
-        flash("Já existe outro escritório com esse nome.", "error")
-        return redirect(url_for("main.admin_offices"))
-
-    office.name = name
-    db.session.commit()
-    flash("Escritório atualizado.", "success")
-    return redirect(url_for("main.admin_offices"))
-
-
-@bp.route("/admin/offices/<int:office_id>/toggle", methods=["POST"])
-def admin_toggle_office(office_id):
-    office = db.session.get(Office, office_id)
-    if not office:
-        flash("Escritório não encontrado.", "error")
-        return redirect(url_for("main.admin_offices"))
-
-    should_activate = not office.active
-    office.active = should_activate
-
-    if should_activate:
-        for space in office.spaces:
-            space.active = True
-    else:
-        for space in office.spaces:
-            space.active = False
-
-    db.session.commit()
-    flash("Status do escritório atualizado.", "success")
-    return redirect(url_for("main.admin_offices"))
-
-
-@bp.route("/admin/spaces", methods=["GET", "POST"])
-def admin_spaces():
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        office_id = request.form.get("office_id")
-        office = db.session.get(Office, int(office_id)) if office_id and office_id.isdigit() else None
-
-        if not name or not office:
-            flash("Informe escritório e nome da sala.", "error")
-            return redirect(url_for("main.admin_spaces"))
-
-        exists = Space.query.filter_by(office_id=office.id, name=name).first()
-        if exists:
-            flash("Já existe uma sala com esse nome nesse escritório.", "error")
-            return redirect(url_for("main.admin_spaces"))
-
-        db.session.add(Space(name=name, office=office, active=True))
-        db.session.commit()
-        flash("Sala cadastrada.", "success")
-        return redirect(url_for("main.admin_spaces"))
-
-    offices = Office.query.order_by(Office.name.asc()).all()
-    spaces = Space.query.join(Space.office).order_by(Office.name.asc(), Space.name.asc()).all()
-    return render_template("admin/spaces.html", offices=offices, spaces=spaces)
-
-
-@bp.route("/admin/spaces/<int:space_id>/update", methods=["POST"])
-def admin_update_space(space_id):
-    space = db.session.get(Space, space_id)
-    if not space:
-        flash("Sala não encontrada.", "error")
-        return redirect(url_for("main.admin_spaces"))
-
-    name = request.form.get("name", "").strip()
-    office_id = request.form.get("office_id")
-    office = db.session.get(Office, int(office_id)) if office_id and office_id.isdigit() else None
-
-    if not name or not office:
-        flash("Informe escritório e nome da sala.", "error")
-        return redirect(url_for("main.admin_spaces"))
-
-    duplicate = Space.query.filter(
-        Space.office_id == office.id,
-        Space.name == name,
-        Space.id != space.id,
-    ).first()
-    if duplicate:
-        flash("Já existe outra sala com esse nome nesse escritório.", "error")
-        return redirect(url_for("main.admin_spaces"))
-
-    space.name = name
-    space.office = office
-    db.session.commit()
-    flash("Sala atualizada.", "success")
-    return redirect(url_for("main.admin_spaces"))
-
-
-@bp.route("/admin/spaces/<int:space_id>/toggle", methods=["POST"])
-def admin_toggle_space(space_id):
-    space = db.session.get(Space, space_id)
-    if not space:
-        flash("Sala não encontrada.", "error")
-        return redirect(url_for("main.admin_spaces"))
-
-    if not space.active and not space.office.active:
-        flash("Reative o escritório antes de ativar uma sala dele.", "error")
-        return redirect(url_for("main.admin_spaces"))
-
-    space.active = not space.active
-    db.session.commit()
-    flash("Status da sala atualizado.", "success")
-    return redirect(url_for("main.admin_spaces"))
-
-
-@bp.route("/admin/products", methods=["GET", "POST"])
-def admin_products():
-    if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        input_type = request.form.get("input_type", "quantity")
-
-        if not name:
-            flash("Informe o nome do insumo.", "error")
-            return redirect(url_for("main.admin_products"))
-
-        if input_type not in {"quantity", "boolean"}:
-            flash("Tipo de insumo inválido.", "error")
-            return redirect(url_for("main.admin_products"))
-
-        if Product.query.filter_by(name=name).first():
-            flash("Já existe um insumo com esse nome.", "error")
-            return redirect(url_for("main.admin_products"))
-
-        product = Product(
-            name=name,
-            form_key=unique_product_key(name),
-            input_type=input_type,
-            sort_order=next_product_sort_order(),
-            active=True,
-        )
-        db.session.add(product)
-        db.session.commit()
-        flash("Insumo cadastrado.", "success")
-        return redirect(url_for("main.admin_products"))
-
-    products = Product.query.order_by(Product.sort_order.asc(), Product.name.asc()).all()
-    return render_template("admin/products.html", products=products)
-
-
-@bp.route("/admin/products/<int:product_id>/update", methods=["POST"])
-def admin_update_product(product_id):
-    product = db.session.get(Product, product_id)
-    if not product:
-        flash("Insumo não encontrado.", "error")
-        return redirect(url_for("main.admin_products"))
-
-    name = request.form.get("name", "").strip()
-    input_type = request.form.get("input_type", "quantity")
-
-    if not name:
-        flash("Informe o nome do insumo.", "error")
-        return redirect(url_for("main.admin_products"))
-
-    if input_type not in {"quantity", "boolean"}:
-        flash("Tipo de insumo inválido.", "error")
-        return redirect(url_for("main.admin_products"))
-
-    duplicate = Product.query.filter(Product.name == name, Product.id != product.id).first()
-    if duplicate:
-        flash("Já existe outro insumo com esse nome.", "error")
-        return redirect(url_for("main.admin_products"))
-
-    product.name = name
-    product.input_type = input_type
-    db.session.commit()
-    flash("Insumo atualizado.", "success")
-    return redirect(url_for("main.admin_products"))
-
-
-@bp.route("/admin/products/<int:product_id>/toggle", methods=["POST"])
-def admin_toggle_product(product_id):
-    product = db.session.get(Product, product_id)
-    if not product:
-        flash("Insumo não encontrado.", "error")
-        return redirect(url_for("main.admin_products"))
-
-    product.active = not product.active
-    db.session.commit()
-    flash("Status do insumo atualizado.", "success")
-    return redirect(url_for("main.admin_products"))
-
-
-@bp.route("/admin/products/reorder", methods=["POST"])
-def admin_reorder_products():
-    data = request.get_json(silent=True) or {}
-    raw_ids = data.get("product_ids")
-
-    if not isinstance(raw_ids, list) or not raw_ids:
-        return jsonify({"success": False, "message": "Envie a nova ordem dos insumos."}), 400
-
-    try:
-        product_ids = [int(product_id) for product_id in raw_ids]
-    except (TypeError, ValueError):
-        return jsonify({"success": False, "message": "Lista de insumos inválida."}), 400
-
-    if len(product_ids) != len(set(product_ids)):
-        return jsonify({"success": False, "message": "A lista de insumos contém duplicidades."}), 400
-
-    products = Product.query.filter(Product.id.in_(product_ids)).all()
-    if len(products) != len(product_ids):
-        return jsonify({"success": False, "message": "Um ou mais insumos não foram encontrados."}), 404
-
-    products_by_id = {product.id: product for product in products}
-    for index, product_id in enumerate(product_ids, start=1):
-        products_by_id[product_id].sort_order = index
-
-    db.session.commit()
-    return jsonify({"success": True})
-
-
 @bp.route("/api/orders", methods=["GET"])
-def get_orders():
-    orders = (
-        Order.query.filter_by(status=STATUS_PENDING)
-        .order_by(Order.created_at.asc())
-        .all()
-    )
-    return jsonify([order.to_dict() for order in orders])
+@login_required(ROLE_COPA)
+def get_orders() -> ResponseReturnValue:
+    return jsonify([order.to_dict() for order in services.pending_orders()])
 
 
 @bp.route("/api/complete_order/<int:order_id>", methods=["POST"])
-def complete_order(order_id):
-    order = db.session.get(Order, order_id)
-    if not order:
-        return jsonify({"success": False, "message": "Pedido não encontrado."}), 404
+@login_required(ROLE_COPA)
+def complete_order(order_id: int) -> ResponseReturnValue:
+    try:
+        order = services.complete_order(order_id)
+    except ServiceError as error:
+        return jsonify({"success": False, "message": error.message}), error.status_code
 
-    order.status = STATUS_COMPLETED
-    order.completed_at = local_now()
-    db.session.commit()
+    audit("pedido.concluido", pedido=order.id, sala=order.space.name)
     return jsonify({"success": True})
+
+
+# --------------------------------------------------------------------------- #
+# Administração
+# --------------------------------------------------------------------------- #
+
+@bp.route("/admin")
+@login_required(ROLE_ADMIN)
+def admin_dashboard() -> str:
+    return render_template("admin/dashboard.html", stats=services.dashboard_stats())
+
+
+@bp.route("/admin/history")
+@login_required(ROLE_ADMIN)
+def admin_history() -> ResponseReturnValue:
+    raw_office_id = request.args.get("office_id", "").strip()
+    office_id = int(raw_office_id) if raw_office_id.isdecimal() else None
+    page = request.args.get("page", "1")
+    page_number = int(page) if page.isdecimal() and int(page) > 0 else 1
+
+    try:
+        start = services.parse_date(request.args.get("start"))
+        end = services.parse_date(request.args.get("end"))
+        pagination = services.completed_orders_page(
+            start=start, end=end, office_id=office_id, page=page_number
+        )
+        summary = services.completed_orders_summary(
+            start=start, end=end, office_id=office_id
+        )
+    except ServiceError as error:
+        return (
+            render_template(
+                "admin/history.html",
+                offices=services.all_offices(),
+                pagination=None,
+                summary={"orders": 0, "items": 0},
+                filters={},
+                error=error.message,
+            ),
+            error.status_code,
+        )
+
+    return render_template(
+        "admin/history.html",
+        offices=services.all_offices(),
+        pagination=pagination,
+        summary=summary,
+        filters={
+            "start": request.args.get("start", ""),
+            "end": request.args.get("end", ""),
+            "office_id": raw_office_id,
+        },
+    )
+
+
+@bp.route("/admin/offices", methods=["GET"])
+@login_required(ROLE_ADMIN)
+def admin_offices() -> str:
+    return render_template("admin/offices.html", offices=services.all_offices())
+
+
+@bp.route("/admin/offices", methods=["POST"])
+@login_required(ROLE_ADMIN)
+@admin_form_action("main.admin_offices")
+def admin_create_office() -> str:
+    office = services.create_office(request.form.get("name"))
+    audit("escritorio.criado", escritorio=office.name)
+    return "Escritório cadastrado."
+
+
+@bp.route("/admin/offices/<int:office_id>/update", methods=["POST"])
+@login_required(ROLE_ADMIN)
+@admin_form_action("main.admin_offices")
+def admin_update_office(office_id: int) -> str:
+    office = services.update_office(office_id, request.form.get("name"))
+    audit("escritorio.atualizado", escritorio=office.name)
+    return "Escritório atualizado."
+
+
+@bp.route("/admin/offices/<int:office_id>/toggle", methods=["POST"])
+@login_required(ROLE_ADMIN)
+@admin_form_action("main.admin_offices")
+def admin_toggle_office(office_id: int) -> str:
+    office = services.toggle_office(office_id)
+    audit("escritorio.status", escritorio=office.name, ativo=office.active)
+    return "Status do escritório atualizado."
+
+
+@bp.route("/admin/spaces", methods=["GET"])
+@login_required(ROLE_ADMIN)
+def admin_spaces() -> str:
+    return render_template(
+        "admin/spaces.html",
+        offices=services.all_offices(),
+        spaces=services.all_spaces(),
+    )
+
+
+@bp.route("/admin/spaces", methods=["POST"])
+@login_required(ROLE_ADMIN)
+@admin_form_action("main.admin_spaces")
+def admin_create_space() -> str:
+    space = services.create_space(
+        request.form.get("office_id"), request.form.get("name")
+    )
+    audit("sala.criada", sala=space.name, escritorio=space.office.name)
+    return "Sala cadastrada."
+
+
+@bp.route("/admin/spaces/<int:space_id>/update", methods=["POST"])
+@login_required(ROLE_ADMIN)
+@admin_form_action("main.admin_spaces")
+def admin_update_space(space_id: int) -> str:
+    space = services.update_space(
+        space_id, request.form.get("office_id"), request.form.get("name")
+    )
+    audit("sala.atualizada", sala=space.name, escritorio=space.office.name)
+    return "Sala atualizada."
+
+
+@bp.route("/admin/spaces/<int:space_id>/toggle", methods=["POST"])
+@login_required(ROLE_ADMIN)
+@admin_form_action("main.admin_spaces")
+def admin_toggle_space(space_id: int) -> str:
+    space = services.toggle_space(space_id)
+    audit("sala.status", sala=space.name, ativa=space.active)
+    return "Status da sala atualizado."
+
+
+@bp.route("/admin/products", methods=["GET"])
+@login_required(ROLE_ADMIN)
+def admin_products() -> str:
+    return render_template("admin/products.html", products=services.all_products())
+
+
+@bp.route("/admin/products", methods=["POST"])
+@login_required(ROLE_ADMIN)
+@admin_form_action("main.admin_products")
+def admin_create_product() -> str:
+    product = services.create_product(
+        request.form.get("name"), request.form.get("input_type")
+    )
+    audit("insumo.criado", insumo=product.name, tipo=product.input_type)
+    return "Insumo cadastrado."
+
+
+@bp.route("/admin/products/<int:product_id>/update", methods=["POST"])
+@login_required(ROLE_ADMIN)
+@admin_form_action("main.admin_products")
+def admin_update_product(product_id: int) -> str:
+    product = services.update_product(
+        product_id, request.form.get("name"), request.form.get("input_type")
+    )
+    audit("insumo.atualizado", insumo=product.name, tipo=product.input_type)
+    return "Insumo atualizado."
+
+
+@bp.route("/admin/products/<int:product_id>/toggle", methods=["POST"])
+@login_required(ROLE_ADMIN)
+@admin_form_action("main.admin_products")
+def admin_toggle_product(product_id: int) -> str:
+    product = services.toggle_product(product_id)
+    audit("insumo.status", insumo=product.name, ativo=product.active)
+    return "Status do insumo atualizado."
+
+
+@bp.route("/admin/products/reorder", methods=["POST"])
+@login_required(ROLE_ADMIN)
+def admin_reorder_products() -> ResponseReturnValue:
+    data = request.get_json(silent=True) or {}
+
+    try:
+        product_ids = services.reorder_products(data.get("product_ids"))
+    except NotFoundError as error:
+        return jsonify({"success": False, "message": error.message}), error.status_code
+    except ServiceError as error:
+        return jsonify({"success": False, "message": error.message}), error.status_code
+
+    audit("insumo.reordenado", total=len(product_ids))
+    return jsonify({"success": True})
+
+
+# --------------------------------------------------------------------------- #
+# Operação
+# --------------------------------------------------------------------------- #
+
+@bp.route("/health")
+@csrf.exempt
+def health() -> ResponseReturnValue:
+    """Verificação de saúde: responde 503 se o banco não estiver acessível."""
+
+    from sqlalchemy import text
+
+    from app.extensions import db
+
+    try:
+        db.session.execute(text("SELECT 1"))
+    except Exception:  # noqa: BLE001 - qualquer falha aqui significa indisponível
+        current_app.logger.exception("Health check falhou ao consultar o banco.")
+        return jsonify({"status": "degraded", "database": "unavailable"}), 503
+
+    return jsonify({"status": "ok", "database": "ok"})

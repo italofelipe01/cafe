@@ -1,0 +1,13 @@
+{% extends "errors/_error.html" %}
+
+{% block error_code %}429{% endblock %}
+{% block error_label %}Limite de envios{% endblock %}
+{% block error_heading %}Muitos envios em pouco tempo{% endblock %}
+
+{% block error_help %}
+<ul class="error-help">
+    <li>Aguarde um minuto antes de enviar o pedido novamente.</li>
+    <li>O limite existe para que uma sala não ocupe a fila da copa sozinha.</li>
+    <li>Se o pedido já apareceu no painel, não é preciso reenviar.</li>
+</ul>
+{% endblock %}

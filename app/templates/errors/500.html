@@ -1,0 +1,13 @@
+{% extends "errors/_error.html" %}
+
+{% block error_code %}500{% endblock %}
+{% block error_label %}Falha no servidor{% endblock %}
+{% block error_heading %}O portal encontrou um erro inesperado{% endblock %}
+
+{% block error_help %}
+<ul class="error-help">
+    <li>A falha foi registrada no log do servidor com data e hora.</li>
+    <li>Nenhum pedido é gravado pela metade: se a tela de confirmação não apareceu, o pedido não foi criado.</li>
+    <li>Tente novamente em alguns instantes; se persistir, avise quem administra o portal.</li>
+</ul>
+{% endblock %}

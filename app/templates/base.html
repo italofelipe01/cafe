@@ -3,13 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Portal interno de solicitação de itens de copa por sala.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}Espaço Café EBM{% endblock %}</title>
+
+    {#
+      Tema aplicado antes da primeira pintura. Rodar isso no DOMContentLoaded
+      fazia o tema escuro piscar branco a cada navegação. O nonce é o que
+      autoriza este bloco sob a Content-Security-Policy.
+    #}
+    <script nonce="{{ csp_nonce() }}">
+        (function () {
+            try {
+                var saved = localStorage.getItem('theme');
+                var root = document.documentElement;
+                if (saved === 'dark' || saved === 'light') {
+                    root.dataset.theme = saved;
+                }
+            } catch (error) {
+                /* localStorage indisponível: segue a preferência do sistema. */
+            }
+        })();
+    </script>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png">
 </head>
 <body>
     <button id="theme-toggle" class="btn-theme-toggle" type="button" aria-label="Alternar tema">
-        <span class="icon">☀️</span>
+        <span class="icon" aria-hidden="true">☀️</span>
     </button>
 
     <header class="site-header">
@@ -22,8 +44,21 @@
 
         <nav class="top-nav" aria-label="Navegação principal">
             <a href="{{ url_for('main.index') }}">Pedido</a>
+            {% if can_copa %}
             <a href="{{ url_for('main.copa_dashboard') }}">Copa</a>
+            {% endif %}
+            {% if can_admin %}
             <a href="{{ url_for('main.admin_dashboard') }}">Admin</a>
+            {% endif %}
+
+            {% if is_authenticated %}
+            <form method="POST" action="{{ url_for('main.logout') }}" class="nav-session-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-link">Sair</button>
+            </form>
+            {% else %}
+            <a href="{{ url_for('main.login') }}">Entrar</a>
+            {% endif %}
         </nav>
     </header>
 
