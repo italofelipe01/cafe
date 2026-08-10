@@ -302,7 +302,7 @@ def admin_history() -> ResponseReturnValue:
                 "admin/history.html",
                 offices=services.all_offices(),
                 pagination=None,
-                summary={"orders": 0, "items": 0},
+                summary=services.HistorySummary(orders=0, items=0),
                 filters={},
                 error=error.message,
             ),

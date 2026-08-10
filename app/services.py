@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from datetime import date, datetime, time
+from typing import NamedTuple
 
 from sqlalchemy import func, select
 
@@ -43,6 +44,20 @@ class ServiceError(Exception):
 class NotFoundError(ServiceError):
     def __init__(self, message: str) -> None:
         super().__init__(message, status_code=404)
+
+
+class HistorySummary(NamedTuple):
+    """Totais do período consultado no histórico.
+
+    É uma tupla nomeada, e não um dicionário, por causa de como o Jinja resolve
+    ``summary.items``: ele tenta o atributo antes da chave, e ``dict.items`` é
+    um método — a tela chegou a exibir ``<built-in method items of dict...>``
+    no lugar do total. Uma tupla não tem esse método, então o acesso por ponto
+    só pode significar o campo.
+    """
+
+    orders: int
+    items: int
 
 
 # --------------------------------------------------------------------------- #
@@ -272,7 +287,7 @@ def completed_orders_summary(
     start: date | None = None,
     end: date | None = None,
     office_id: int | None = None,
-) -> dict[str, object]:
+) -> HistorySummary:
     """Totais do período consultado, para o cabeçalho do histórico."""
 
     filters = [Order.status == STATUS_COMPLETED]
@@ -294,7 +309,7 @@ def completed_orders_summary(
         .where(*filters)
     ) or 0
 
-    return {"orders": total_orders, "items": int(total_items)}
+    return HistorySummary(orders=total_orders, items=int(total_items))
 
 
 def dashboard_stats() -> dict[str, int]:

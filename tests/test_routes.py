@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import unittest
 
 from app.models import STATUS_COMPLETED, Office, Order, Product, Space
@@ -454,9 +455,30 @@ class TestAdminFiltersAndHistory(AppTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(f"#{order_id}".encode(), response.data)
         self.assertIn(b"Sala Aton", response.data)
-        # Um pedido concluído, três copos.
-        self.assertIn(b">1<", response.data)
-        self.assertIn(b">3<", response.data)
+
+    def test_historico_soma_os_totais_do_periodo(self):
+        self.submit_order(copo="3", cafe_expresso_sem_acucar="2", limpeza_sala="Sim")
+
+        with self.app.app_context():
+            order_id = Order.query.one().id
+
+        self.login_as_admin()
+        self.client.post(f"/api/complete_order/{order_id}")
+
+        html = self.client.get("/admin/history").get_data(as_text=True)
+
+        # O total precisa aparecer como número. Quando o resumo era um dict, o
+        # Jinja resolvia `summary.items` para o método dict.items e a tela
+        # mostrava "<built-in method items of dict object at 0x...>".
+        self.assertNotIn("built-in method", html)
+        self.assertNotIn("dict object at", html)
+
+        totais = re.findall(r"<strong>(\d+)</strong>\s*<span>([^<]+)</span>", html)
+        resumo = {rotulo.strip(): int(valor) for valor, rotulo in totais}
+
+        self.assertEqual(resumo["Pedidos concluídos"], 1)
+        # 3 copos + 2 cafés + 1 pela limpeza da sala.
+        self.assertEqual(resumo["Itens atendidos"], 6)
 
     def test_historico_recusa_data_invalida(self):
         response = self.client.get("/admin/history?start=10-08-2026")
