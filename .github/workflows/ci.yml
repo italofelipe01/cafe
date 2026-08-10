@@ -2,11 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-  # Permite que o workflow de release reaproveite esta verificação em vez de
-  # duplicar os passos: uma única definição do que precisa passar.
-  workflow_call:
 
 jobs:
   test:

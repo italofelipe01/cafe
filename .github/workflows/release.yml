@@ -4,18 +4,24 @@ name: Release
 #
 # A versão é derivada das mensagens de commit desde a última tag, segundo a
 # convenção que o projeto já usa (fix -> patch, feat -> minor, BREAKING CHANGE
-# -> major). Nada é publicado sem o CI passar antes: se lint, testes ou
-# migrations falharem, o release não acontece.
+# -> major).
+#
+# O disparo é o término do CI, e não o push: assim a verificação roda uma vez
+# só. Chamar o CI como workflow reutilizável a partir daqui faria cada push
+# executar lint, testes e migrations duas vezes — uma pelo gatilho do próprio
+# CI e outra dentro deste workflow.
 #
 # O passo de release empurra um commit "chore(release): vX.Y.Z" com a versão
 # atualizada no pyproject.toml e o CHANGELOG regenerado, cria a tag e publica
 # a GitHub Release. Esse commit traz [skip ci] para não reentrar no ciclo.
 
 on:
-  push:
-    branches: [main, master]
-  # Permite disparar manualmente pela aba Actions, útil quando se quer publicar
-  # uma correção sem esperar o próximo push.
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  # Permite disparar manualmente pela aba Actions, útil para publicar sem
+  # esperar o próximo push.
   workflow_dispatch:
 
 concurrency:
@@ -24,14 +30,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Reaproveita o CI em vez de duplicar os passos: uma única definição de
-  # "o que precisa passar" para o projeto inteiro.
-  verificacao:
-    uses: ./.github/workflows/ci.yml
-
   release:
-    needs: verificacao
     runs-on: ubuntu-latest
+
+    # Só publica se o CI que disparou este workflow tiver passado. No disparo
+    # manual não há CI associado, e a responsabilidade é de quem clicou.
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
 
     permissions:
       contents: write # criar a tag, o commit de versão e a Release
@@ -42,6 +48,9 @@ jobs:
           # O semantic-release precisa do histórico completo e das tags para
           # saber qual foi a última versão e quais commits vieram depois.
           fetch-depth: 0
+          # workflow_run roda desanexado do branch; sem isto o commit de versão
+          # não teria para onde ir.
+          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configurar Python
@@ -49,7 +58,7 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Calcular a próxima versão
+      - name: Calcular e aplicar a próxima versão
         id: versao
         uses: python-semantic-release/python-semantic-release@v10
         with:

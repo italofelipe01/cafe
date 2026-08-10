@@ -26,7 +26,7 @@ build_command = ""
 changelog_file = "CHANGELOG.md"
 
 [tool.semantic_release.branches.main]
-match = "(master|main)"
+match = "main"
 
 [tool.semantic_release.changelog]
 # "update" insere a nova versão na marca abaixo em vez de reescrever o arquivo:
