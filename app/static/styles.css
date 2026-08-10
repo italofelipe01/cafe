@@ -441,12 +441,44 @@ th {
         position: relative;
     }
 
+    /* O rótulo de cada célula vem de data-label, já que o cabeçalho da
+       tabela fica escondido neste modo. */
     table td::before {
-        content: attr(data-label);
-        float: left;
-        font-weight: bold;
-        text-transform: uppercase;
         color: var(--color-text-main);
+        content: attr(data-label);
+        font-weight: 700;
+        text-align: left;
+        text-transform: uppercase;
+    }
+
+    /* Rótulo à esquerda, valor à direita, com espaço garantido entre os dois. */
+    table td {
+        align-items: baseline;
+        display: flex;
+        gap: 16px;
+        justify-content: space-between;
+    }
+
+    /* Célula sem rótulo — a que traz um formulário de edição, por exemplo —
+       ocupa a linha inteira em vez de ficar espremida contra a borda direita. */
+    table td:not([data-label]) {
+        display: block;
+        text-align: left;
+    }
+
+    table td:not([data-label])::before {
+        content: none;
+    }
+
+    /* Célula de "nenhum registro": ocupa a linha inteira, centralizada. */
+    table td[colspan]:not([data-label]) {
+        text-align: center;
+    }
+
+    /* A lista de itens do pedido alinha à esquerda, como lista. */
+    table td .cell-items {
+        flex: 1 1 auto;
+        text-align: left;
     }
 
     table td:last-child {
@@ -1250,7 +1282,7 @@ th {
     }
 
     .data-table {
-        min-width: 680px;
+        min-width: 0;
     }
 }
 

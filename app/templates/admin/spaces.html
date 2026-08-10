@@ -68,6 +68,7 @@
             <tbody>
                 {% for space in spaces %}
                 <tr data-space-row data-office-id="{{ space.office_id }}" data-space-name="{{ space.name|lower }}">
+                    {# Sem data-label: o formulário já mostra o nome e o escritório. #}
                     <td colspan="2">
                         <form method="POST" action="{{ url_for('main.admin_update_space', space_id=space.id) }}" class="inline-edit-form two-columns">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -80,12 +81,12 @@
                             <button type="submit" class="btn btn-primary btn-compact">Salvar</button>
                         </form>
                     </td>
-                    <td>
+                    <td data-label="Status">
                         <span class="status-pill {{ 'is-active' if space.active else 'is-inactive' }}">
                             {{ 'Ativa' if space.active else 'Inativa' }}
                         </span>
                     </td>
-                    <td>
+                    <td data-label="Ações">
                         <form method="POST" action="{{ url_for('main.admin_toggle_space', space_id=space.id) }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-secondary btn-compact" {% if not space.office.active and not space.active %}title="Reative o escritório antes de ativar a sala"{% endif %}>

@@ -67,14 +67,14 @@
             <tbody>
                 {% for order in pagination.items if pagination %}
                 <tr>
-                    <td class="cell-id">#{{ order.id }}</td>
-                    <td>{{ order.space.name }}</td>
-                    <td>{{ order.office.name }}</td>
-                    <td class="cell-time">{{ order.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
-                    <td class="cell-time">
+                    <td data-label="Pedido" class="cell-id">#{{ order.id }}</td>
+                    <td data-label="Sala">{{ order.space.name }}</td>
+                    <td data-label="Escritório">{{ order.office.name }}</td>
+                    <td data-label="Solicitado" class="cell-time">{{ order.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+                    <td data-label="Concluído" class="cell-time">
                         {{ order.completed_at.strftime("%d/%m/%Y %H:%M") if order.completed_at else "--" }}
                     </td>
-                    <td>
+                    <td data-label="Itens">
                         <ul class="cell-items">
                             {% for item in order.items %}
                             <li><span>{{ item.product.name }}</span><strong>{{ item.display_quantity() }}</strong></li>

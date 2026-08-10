@@ -34,19 +34,19 @@
             <tbody>
                 {% for office in offices %}
                 <tr>
-                    <td>
+                    <td data-label="Nome">
                         <form method="POST" action="{{ url_for('main.admin_update_office', office_id=office.id) }}" class="inline-edit-form">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input name="name" type="text" class="form-control" value="{{ office.name }}" required>
                             <button type="submit" class="btn btn-primary btn-compact">Salvar</button>
                         </form>
                     </td>
-                    <td>
+                    <td data-label="Status">
                         <span class="status-pill {{ 'is-active' if office.active else 'is-inactive' }}">
                             {{ 'Ativo' if office.active else 'Inativo' }}
                         </span>
                     </td>
-                    <td>
+                    <td data-label="Ações">
                         <form method="POST" action="{{ url_for('main.admin_toggle_office', office_id=office.id) }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-secondary btn-compact">
