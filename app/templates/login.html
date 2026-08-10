@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Entrar | Espaço Café EBM{% endblock %}
+
+{% block content %}
+<section class="panel panel-narrow">
+    <div class="page-heading">
+        <p class="eyebrow">Acesso interno</p>
+        <h1>Entrar</h1>
+        <p>O painel da copa e a administração exigem senha. O formulário de pedido é aberto.</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="{{ url_for('main.login') }}" class="form-plain">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if next_url %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+        {% endif %}
+
+        <label for="password">Senha</label>
+        <input
+            id="password"
+            name="password"
+            type="password"
+            class="form-control"
+            autocomplete="current-password"
+            required
+            autofocus
+        >
+
+        <button type="submit" class="btn btn-primary">Entrar</button>
+    </form>
+
+    <a class="text-link" href="{{ url_for('main.index') }}">Voltar para o pedido</a>
+</section>
+{% endblock %}
