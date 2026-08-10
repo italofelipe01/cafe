@@ -26,6 +26,7 @@
     /* Table Colors */
     --color-table-header-bg: #f2f2f2;
     --color-table-border: #ddd;
+    --color-nav-hover: rgba(27, 44, 93, 0.08);
     --space-page-x: 20px;
     --space-page-y: 20px;
     --content-max: 1180px;
@@ -58,11 +59,13 @@
 
         --color-table-header-bg: #333333;
         --color-table-border: #444444;
+        --color-nav-hover: rgba(222, 211, 189, 0.12);
     }
 }
 
 /* Escolha manual: tema claro */
 :root[data-theme="light"] {
+    --color-nav-hover: rgba(27, 44, 93, 0.08);
     --color-bg-body: #FFFFFF;
     --color-bg-card: #FFFFFF;
     --color-text-main: #1B2C5D;
@@ -80,6 +83,7 @@
 
 /* Escolha manual: tema escuro */
 :root[data-theme="dark"] {
+    --color-nav-hover: rgba(222, 211, 189, 0.12);
     --color-bg-body: #1a1a1a;
     --color-bg-card: #2c2c2c;
     --color-text-main: #DED3BD;
@@ -248,7 +252,7 @@ a {
     box-sizing: border-box;
     display: grid;
     gap: 14px;
-    grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) minmax(44px, 180px);
+    grid-template-columns: minmax(140px, 210px) minmax(0, 1fr) minmax(44px, 180px);
     margin: 0 auto 12px auto;
     max-width: var(--content-max);
     width: 100%;
@@ -257,10 +261,10 @@ a {
 .site-logo {
     display: block;
     height: auto;
-    max-height: 64px;
-    max-width: 180px;
+    max-height: 76px;
+    max-width: 210px;
     object-fit: contain;
-    width: min(180px, 100%);
+    width: min(210px, 100%);
 }
 
 /* Card Component */
@@ -550,19 +554,14 @@ th {
 .app-shell,
 .dashboard-shell,
 .admin-shell {
+    align-items: center;
     box-sizing: border-box;
-    width: 100%;
-}
-
-.app-shell,
-.dashboard-shell,
-.admin-shell {
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
-    max-width: var(--content-max);
     margin: 0 auto;
+    max-width: var(--content-max);
+    width: 100%;
 }
 
 .panel {
@@ -853,15 +852,28 @@ th {
     box-sizing: border-box;
 }
 
-.top-nav a {
+.top-nav a,
+.top-nav .btn-link {
     border-radius: 999px;
     color: var(--color-text-main);
     font-weight: 700;
+    line-height: 1.2;
     padding: 8px 14px;
+    text-decoration: none;
+    white-space: nowrap;
 }
 
-.top-nav a:hover {
-    background-color: rgba(27, 44, 93, 0.08);
+.top-nav a:hover,
+.top-nav .btn-link:hover {
+    background-color: var(--color-nav-hover);
+    color: var(--color-text-main);
+}
+
+/* O formulario existe so para o POST de logout: `display: contents` faz o
+   botao ser o item flex direto, em vez de o formulario virar uma caixa
+   propria que quebra a linha dentro do contorno arredondado. */
+.nav-session-form {
+    display: contents;
 }
 
 .flash-stack {
@@ -1188,7 +1200,8 @@ th {
         width: 100%;
     }
 
-    .top-nav a {
+    .top-nav a,
+    .top-nav .btn-link {
         flex: 1 1 auto;
         padding: 8px 10px;
         text-align: center;
@@ -1199,8 +1212,8 @@ th {
     }
 
     .site-logo {
-        max-height: 48px;
-        width: min(140px, 48vw);
+        max-height: 56px;
+        width: min(164px, 52vw);
     }
 
     .panel {
@@ -1253,11 +1266,6 @@ th {
 /* ==========================================================================
    Acesso, erros e histórico
    ========================================================================== */
-
-.nav-session-form {
-    display: inline;
-    margin: 0;
-}
 
 .btn-link {
     background: none;
