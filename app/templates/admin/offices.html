@@ -14,6 +14,7 @@
     </div>
 
     <form method="POST" action="{{ url_for('main.admin_offices') }}" class="admin-create-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label for="office-name">Novo escritório</label>
         <div class="inline-form">
             <input id="office-name" name="name" type="text" class="form-control" required placeholder="Ex.: EBM Office Goiânia">
@@ -35,6 +36,7 @@
                 <tr>
                     <td>
                         <form method="POST" action="{{ url_for('main.admin_update_office', office_id=office.id) }}" class="inline-edit-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input name="name" type="text" class="form-control" value="{{ office.name }}" required>
                             <button type="submit" class="btn btn-primary btn-compact">Salvar</button>
                         </form>
@@ -46,6 +48,7 @@
                     </td>
                     <td>
                         <form method="POST" action="{{ url_for('main.admin_toggle_office', office_id=office.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-secondary btn-compact">
                                 {{ 'Desativar' if office.active else 'Ativar' }}
                             </button>

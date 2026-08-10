@@ -14,6 +14,7 @@
     </div>
 
     <form method="POST" action="{{ url_for('main.admin_spaces') }}" class="admin-create-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-grid-compact">
             <div>
                 <label for="space-office">Escritório</label>
@@ -69,6 +70,7 @@
                 <tr data-space-row data-office-id="{{ space.office_id }}" data-space-name="{{ space.name|lower }}">
                     <td colspan="2">
                         <form method="POST" action="{{ url_for('main.admin_update_space', space_id=space.id) }}" class="inline-edit-form two-columns">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input name="name" type="text" class="form-control" value="{{ space.name }}" required>
                             <select name="office_id" class="form-control" required>
                                 {% for office in offices %}
@@ -85,6 +87,7 @@
                     </td>
                     <td>
                         <form method="POST" action="{{ url_for('main.admin_toggle_space', space_id=space.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-secondary btn-compact" {% if not space.office.active and not space.active %}title="Reative o escritório antes de ativar a sala"{% endif %}>
                                 {{ 'Desativar' if space.active else 'Ativar' }}
                             </button>

@@ -14,6 +14,7 @@
     </div>
 
     <form method="POST" action="{{ url_for('main.admin_products') }}" class="admin-create-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="form-grid-compact product-create-grid">
             <div>
                 <label for="product-name">Novo insumo</label>
@@ -32,7 +33,10 @@
 
     <div class="admin-section-heading">
         <h2>Ordem dos insumos</h2>
-        <p>Arraste a linha inteira para reposicionar. A nova ordem é salva automaticamente.</p>
+        <p id="sort-instructions">
+            Arraste a linha inteira para reposicionar, ou foque o botão de mover e use as
+            setas para cima e para baixo. A nova ordem é salva automaticamente.
+        </p>
     </div>
 
     <div
@@ -43,9 +47,16 @@
     >
         {% for product in products %}
         <div class="sortable-row" draggable="true" data-product-id="{{ product.id }}">
-            <button type="button" class="drag-handle" aria-label="Arrastar {{ product.name }}">↕</button>
+            <button
+                type="button"
+                class="drag-handle"
+                aria-label="Mover {{ product.name }}"
+                aria-describedby="sort-instructions"
+                data-sort-handle
+            >↕</button>
 
             <form method="POST" action="{{ url_for('main.admin_update_product', product_id=product.id) }}" class="inline-edit-form product-edit-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input name="name" type="text" class="form-control" value="{{ product.name }}" required>
                 <select name="input_type" class="form-control">
                     <option value="quantity" {% if product.input_type == 'quantity' %}selected{% endif %}>Quantidade</option>
@@ -59,6 +70,7 @@
             </span>
 
             <form method="POST" action="{{ url_for('main.admin_toggle_product', product_id=product.id) }}" class="row-action-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-secondary btn-compact">
                     {{ 'Desativar' if product.active else 'Ativar' }}
                 </button>

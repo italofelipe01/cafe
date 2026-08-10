@@ -28,6 +28,10 @@
             <strong>{{ stats.pending_orders }}</strong>
             <span>Pedidos pendentes</span>
         </div>
+        <div>
+            <strong>{{ stats.completed_orders }}</strong>
+            <span>Pedidos concluídos</span>
+        </div>
     </div>
 
     <div class="admin-actions">
@@ -42,6 +46,10 @@
         <a class="admin-action-card" href="{{ url_for('main.admin_products') }}">
             <strong>Insumos</strong>
             <span>Controlar itens e serviços exibidos no pedido.</span>
+        </a>
+        <a class="admin-action-card" href="{{ url_for('main.admin_history') }}">
+            <strong>Histórico</strong>
+            <span>Consultar pedidos já concluídos por período e escritório.</span>
         </a>
     </div>
 </section>

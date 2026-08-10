@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Histórico | Admin Café EBM{% endblock %}
+{% block main_class %}admin-shell{% endblock %}
+
+{% block content %}
+<section class="panel panel-wide">
+    <div class="admin-header">
+        <div>
+            <p class="eyebrow">Administração</p>
+            <h1>Histórico de pedidos</h1>
+        </div>
+        <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-secondary btn-compact">Voltar</a>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <form method="GET" action="{{ url_for('main.admin_history') }}" class="admin-filters" data-no-transition="true">
+        <div>
+            <label for="history-start">De</label>
+            <input id="history-start" name="start" type="date" class="form-control" value="{{ filters.start }}">
+        </div>
+        <div>
+            <label for="history-end">Até</label>
+            <input id="history-end" name="end" type="date" class="form-control" value="{{ filters.end }}">
+        </div>
+        <div>
+            <label for="history-office">Escritório</label>
+            <select id="history-office" name="office_id" class="form-control">
+                <option value="">Todos os escritórios</option>
+                {% for office in offices %}
+                <option value="{{ office.id }}" {% if filters.office_id == office.id|string %}selected{% endif %}>{{ office.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary btn-compact">Filtrar</button>
+            <a href="{{ url_for('main.admin_history') }}" class="btn btn-secondary btn-compact">Limpar</a>
+        </div>
+    </form>
+
+    <div class="admin-metrics">
+        <div>
+            <strong>{{ summary.orders }}</strong>
+            <span>Pedidos concluídos</span>
+        </div>
+        <div>
+            <strong>{{ summary.items }}</strong>
+            <span>Itens atendidos</span>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Pedido</th>
+                    <th>Sala</th>
+                    <th>Escritório</th>
+                    <th>Solicitado</th>
+                    <th>Concluído</th>
+                    <th>Itens</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in pagination.items if pagination %}
+                <tr>
+                    <td class="cell-id">#{{ order.id }}</td>
+                    <td>{{ order.space.name }}</td>
+                    <td>{{ order.office.name }}</td>
+                    <td class="cell-time">{{ order.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+                    <td class="cell-time">
+                        {{ order.completed_at.strftime("%d/%m/%Y %H:%M") if order.completed_at else "--" }}
+                    </td>
+                    <td>
+                        <ul class="cell-items">
+                            {% for item in order.items %}
+                            <li><span>{{ item.product.name }}</span><strong>{{ item.display_quantity() }}</strong></li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6">Nenhum pedido concluído no período consultado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pagination and pagination.pages > 1 %}
+    <nav class="pagination" aria-label="Paginação do histórico">
+        {% if pagination.has_prev %}
+        <a class="btn btn-secondary btn-compact" href="{{ url_for('main.admin_history', page=pagination.prev_num, **filters) }}">Anterior</a>
+        {% endif %}
+
+        <span class="pagination-status" aria-live="polite">
+            Página {{ pagination.page }} de {{ pagination.pages }}
+        </span>
+
+        {% if pagination.has_next %}
+        <a class="btn btn-secondary btn-compact" href="{{ url_for('main.admin_history', page=pagination.next_num, **filters) }}">Próxima</a>
+        {% endif %}
+    </nav>
+    {% endif %}
+</section>
+{% endblock %}
