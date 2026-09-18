@@ -9,6 +9,9 @@ foi escrita à mão e fica no fim.
 
 <!-- versoes -->
 
+## v1.1.0 (2026-09-18)
+
+
 ## v1.0.1 (2026-09-18)
 
 ### Bug Fixes
