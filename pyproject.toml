@@ -1,6 +1,6 @@
 [project]
 name = "espaco-cafe-ebm"
-version = "1.0.0"
+version = "1.0.1"
 description = "Portal interno de solicitação de itens de copa por sala."
 requires-python = ">=3.11"
 
