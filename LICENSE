@@ -1,21 +1,21 @@
-Copyright (c) 2026 EBM. Todos os direitos reservados.
+MIT License
 
-Este software é de uso interno da organização.
+Copyright (c) 2026 Ítalo Felipe Lira de Morais
 
-É permitido a colaboradores e prestadores autorizados usar, copiar, modificar e
-executar este software para fins internos da organização, incluindo manutenção,
-evolução e implantação em ambientes próprios.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-Não é permitido distribuir, sublicenciar, publicar ou disponibilizar este
-software, no todo ou em parte, a terceiros fora da organização, sem autorização
-expressa e por escrito de quem detém os direitos.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-Os arquivos de fonte tipográfica em app/static/font/ são de terceiros e seguem a
-licença do respectivo detentor. Consulte NOTICE.md.
-
-O SOFTWARE É FORNECIDO "COMO ESTÁ", SEM GARANTIA DE QUALQUER TIPO, EXPRESSA OU
-IMPLÍCITA, INCLUINDO MAS NÃO SE LIMITANDO ÀS GARANTIAS DE COMERCIALIZAÇÃO,
-ADEQUAÇÃO A UM FIM ESPECÍFICO E NÃO VIOLAÇÃO. EM NENHUMA HIPÓTESE OS AUTORES OU
-DETENTORES DOS DIREITOS SERÃO RESPONSÁVEIS POR QUALQUER REIVINDICAÇÃO, DANO OU
-OUTRA RESPONSABILIDADE, SEJA EM AÇÃO CONTRATUAL, EXTRACONTRATUAL OU DE OUTRA
-FORMA, DECORRENTE DE, OU RELACIONADA AO SOFTWARE OU AO SEU USO.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

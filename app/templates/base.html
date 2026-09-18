@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Portal interno de solicitação de itens de copa por sala.">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>{% block title %}Espaço Café EBM{% endblock %}</title>
+    <title>{% block title %}Copa Pronta{% endblock %}</title>
 
     {#
       Tema aplicado antes da primeira pintura. Rodar isso no DOMContentLoaded
@@ -27,7 +27,9 @@
     </script>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icon.svg') }}" type="image/svg+xml">
     <link rel="icon" href="{{ url_for('static', filename='icon.png') }}" type="image/png">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icon.png') }}">
 </head>
 <body>
     <button id="theme-toggle" class="btn-theme-toggle" type="button" aria-label="Alternar tema">
@@ -35,12 +37,15 @@
     </button>
 
     <header class="site-header">
-        <img
-            src="{{ url_for('static', filename='images/logo-light.png') }}"
-            alt="EBM"
-            class="site-logo"
-            data-theme-logo
-        >
+        {# Xícara cujo vapor é um ✓: o pedido que chega pronto à sala. #}
+        <a class="brand" href="{{ url_for('main.index') }}" aria-label="Copa Pronta, página inicial">
+            <svg class="brand-mark" viewBox="4 5 58 58" aria-hidden="true" focusable="false">
+                <path class="brand-mark-check" d="M21 19l7 7 14-14"/>
+                <path class="brand-mark-cup" d="M12 29h36v9a14 14 0 0 1-14 14h-8a14 14 0 0 1-14-14z"/>
+                <path class="brand-mark-line" d="M48 33h2.5a6.5 6.5 0 0 1 0 13H46M8 57h44"/>
+            </svg>
+            <span class="brand-name">Copa <strong>Pronta</strong></span>
+        </a>
 
         <nav class="top-nav" aria-label="Navegação principal">
             <a href="{{ url_for('main.index') }}">Pedido</a>

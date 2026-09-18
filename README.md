@@ -1,4 +1,6 @@
-# Espaço Café EBM
+<p align="center"><img src="app/static/icon.svg" width="96" height="96" alt=""></p>
+
+# Copa Pronta
 
 Portal Flask para solicitação de itens de copa por sala, acompanhamento operacional dos pedidos e manutenção do catálogo usado no formulário.
 
@@ -13,7 +15,7 @@ Portal Flask para solicitação de itens de copa por sala, acompanhamento operac
 - Ativação/inativação de escritórios, salas e insumos, com cascata do escritório para as salas.
 - Filtro de salas por escritório e busca por trecho do nome.
 - Reordenação de insumos por arrastar ou pelas setas do teclado.
-- Tema claro/escuro com logo adequada para cada modo, aplicado antes da primeira pintura.
+- Tema claro/escuro, aplicado antes da primeira pintura; a marca é um SVG inline que acompanha o tema.
 - Transições leves entre páginas e na troca de tema, respeitando redução de movimento do sistema.
 - Autenticação por perfil, proteção CSRF, cabeçalhos de segurança, limite de requisições e trilha de auditoria.
 - Migrations com Alembic e suíte automatizada com SQLite em memória.
@@ -33,9 +35,8 @@ app/
     dashboard.js           # JS do painel da copa
     script.js              # JS global: tema, transições, filtros e ordenação
     styles.css             # Estilos globais
-    icon.png               # Favicon
-    images/                # Logos claro/escuro
-    font/                  # Fonte local Fedra Sans Pro
+    icon.svg               # Favicon e símbolo da marca
+    icon.png               # Favicon para navegadores sem SVG e ícone de atalho no iOS
   templates/
     base.html              # Layout base
     login.html             # Acesso aos painéis internos
@@ -230,8 +231,8 @@ Exemplo de resposta de `/api/orders`:
 [
   {
     "id": 12,
-    "office": "EBM Office Goiânia",
-    "room": "Sala Aton",
+    "office": "Sede Centro",
+    "room": "Sala Bourbon",
     "status": "pending",
     "date": "10/08/2026",
     "time": "09:14",
@@ -284,13 +285,13 @@ Versão e changelog não se editam à mão. Detalhes e diagnóstico em [docs/REL
 
 ## Licença
 
-Uso interno da organização, conforme [LICENSE](LICENSE). Se a intenção passar a
-ser publicar o código, substitua o arquivo por uma licença aberta (MIT, Apache 2.0)
-e resolva antes a questão da fonte descrita em [NOTICE.md](NOTICE.md).
+[MIT](LICENSE).
 
 Como contribuir: [CONTRIBUTING.md](CONTRIBUTING.md). Histórico de mudanças:
 [CHANGELOG.md](CHANGELOG.md). Decisões de arquitetura: [docs/DECISIONS.md](docs/DECISIONS.md).
 
-## Fonte
+## Identidade visual
 
-O diretório `app/static/font/` traz a Fedra Sans Pro, uma fonte comercial. Confirme com quem detém a licença se ela cobre distribuição em repositório e entrega por servidor antes de publicar este projeto fora da organização.
+O símbolo é uma xícara cujo vapor forma um ✓: o pedido que chega pronto à sala. No cabeçalho ele é um SVG inline em `base.html`, pintado pelas variáveis `--color-*`, por isso a mesma marcação serve aos dois temas. `app/static/icon.svg` é a versão com fundo, usada como favicon.
+
+A paleta usa tons de café, definidos no topo de `styles.css`. O texto usa a fonte do sistema, então não há arquivo de fonte para licenciar nem origem externa na CSP.

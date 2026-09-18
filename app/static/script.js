@@ -147,7 +147,6 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ------------------------------------------------------------------ */
 
     const toggleButton = document.getElementById('theme-toggle');
-    const logos = document.querySelectorAll('[data-theme-logo]');
     const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
     const root = document.documentElement;
 
@@ -182,11 +181,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateVisuals(isDark) {
-        const logoPath = isDark ? '/static/images/logo-dark.png' : '/static/images/logo-light.png';
-        logos.forEach(logo => {
-            logo.src = logoPath;
-        });
-
         if (toggleButton) {
             const iconSpan = toggleButton.querySelector('.icon');
             if (iconSpan) {

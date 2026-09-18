@@ -1,32 +1,42 @@
-/* Global CSS with Brand Guidelines */
-
-@import url('font/stylesheet.css');
+/* Copa Pronta — estilos globais */
 
 :root {
-    /* Brand Colors */
-    --color-primary-blue: #1B2C5D; /* Dark Blue */
-    --color-primary-red: #C12033; /* Red */
-    --color-beige: #DED3BD; /* Beige */
-    --color-gray: #625D5F; /* Gray */
+    /*
+     * Marca: tons de café. `--color-primary` e `--color-accent` são fundos de
+     * botão e faixa, sempre com texto branco, por isso não mudam com o tema.
+     * `--color-accent-text` é o mesmo acento usado como texto, borda ou foco:
+     * esse precisa clarear no tema escuro para manter o contraste.
+     */
+    --color-primary: #4A2C1D; /* Espresso */
+    --color-primary-hover: #3A2216;
+    --color-accent: #A34A1F; /* Terracota */
+    --color-accent-hover: #87391A;
+    --color-accent-text: #A34A1F;
+    --color-danger: #B3261E;
+    --color-danger-text: #B3261E;
     --color-success: #27ae60; /* Success Green */
+    --color-on-fill: #FFFFFF; /* texto sobre primary, accent, danger e success */
 
     /* Theme Colors - Light Mode (Default) */
-    --color-bg-body: #FFFFFF;
+    --color-bg-body: #FAF6F1;
     --color-bg-card: #FFFFFF;
-    --color-text-main: #1B2C5D; /* Blue text */
-    --color-text-secondary: #625D5F; /* Gray text */
-    --color-border: #DED3BD; /* Beige border */
-    --color-shadow: rgba(0, 0, 0, 0.1);
+    --color-text-main: #3B2418;
+    --color-text-secondary: #6F5E53;
+    --color-border: #E6D8C6;
+    --color-shadow: rgba(59, 36, 24, 0.1);
+    --color-backdrop: rgba(28, 20, 15, 0.5);
 
     /* Input Colors */
     --color-input-bg: #FFFFFF;
-    --color-input-text: #1B2C5D;
-    --color-input-border: #DED3BD;
+    --color-input-text: #3B2418;
+    --color-input-border: #D9C7B2;
 
     /* Table Colors */
-    --color-table-header-bg: #f2f2f2;
-    --color-table-border: #ddd;
-    --color-nav-hover: rgba(27, 44, 93, 0.08);
+    --color-table-header-bg: #F5EDE3;
+    --color-table-border: #E6D8C6;
+    --color-nav-hover: rgba(74, 44, 29, 0.08);
+
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --space-page-x: 20px;
     --space-page-y: 20px;
     --content-max: 1180px;
@@ -46,57 +56,75 @@
  */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-        --color-bg-body: #1a1a1a; /* Dark Charcoal */
-        --color-bg-card: #2c2c2c; /* Slightly lighter dark for cards */
-        --color-text-main: #DED3BD; /* Beige text */
-        --color-text-secondary: #cccccc; /* Light gray text */
-        --color-border: #625D5F; /* Brand Gray border */
+        --color-primary: #9A6440;
+        --color-primary-hover: #85532F;
+        --color-accent-text: #E39A6B;
+        --color-danger-text: #F2A7A1;
+
+        --color-bg-body: #1C1714;
+        --color-bg-card: #28201B;
+        --color-text-main: #F1E6D8;
+        --color-text-secondary: #C9B8A8;
+        --color-border: #4A3C33;
         --color-shadow: rgba(0, 0, 0, 0.5);
+        --color-backdrop: rgba(0, 0, 0, 0.6);
 
-        --color-input-bg: #333333;
-        --color-input-text: #FFFFFF;
-        --color-input-border: #625D5F;
+        --color-input-bg: #312822;
+        --color-input-text: #F7EFE6;
+        --color-input-border: #5A4A3F;
 
-        --color-table-header-bg: #333333;
-        --color-table-border: #444444;
-        --color-nav-hover: rgba(222, 211, 189, 0.12);
+        --color-table-header-bg: #312822;
+        --color-table-border: #43372F;
+        --color-nav-hover: rgba(241, 230, 216, 0.1);
     }
 }
 
 /* Escolha manual: tema claro */
 :root[data-theme="light"] {
-    --color-nav-hover: rgba(27, 44, 93, 0.08);
-    --color-bg-body: #FFFFFF;
+    --color-primary: #4A2C1D;
+    --color-primary-hover: #3A2216;
+    --color-accent-text: #A34A1F;
+    --color-danger-text: #B3261E;
+
+    --color-bg-body: #FAF6F1;
     --color-bg-card: #FFFFFF;
-    --color-text-main: #1B2C5D;
-    --color-text-secondary: #625D5F;
-    --color-border: #DED3BD;
-    --color-shadow: rgba(0, 0, 0, 0.1);
+    --color-text-main: #3B2418;
+    --color-text-secondary: #6F5E53;
+    --color-border: #E6D8C6;
+    --color-shadow: rgba(59, 36, 24, 0.1);
+    --color-backdrop: rgba(28, 20, 15, 0.5);
 
     --color-input-bg: #FFFFFF;
-    --color-input-text: #1B2C5D;
-    --color-input-border: #DED3BD;
+    --color-input-text: #3B2418;
+    --color-input-border: #D9C7B2;
 
-    --color-table-header-bg: #f2f2f2;
-    --color-table-border: #ddd;
+    --color-table-header-bg: #F5EDE3;
+    --color-table-border: #E6D8C6;
+    --color-nav-hover: rgba(74, 44, 29, 0.08);
 }
 
 /* Escolha manual: tema escuro */
 :root[data-theme="dark"] {
-    --color-nav-hover: rgba(222, 211, 189, 0.12);
-    --color-bg-body: #1a1a1a;
-    --color-bg-card: #2c2c2c;
-    --color-text-main: #DED3BD;
-    --color-text-secondary: #cccccc;
-    --color-border: #625D5F;
+    --color-primary: #9A6440;
+    --color-primary-hover: #85532F;
+    --color-accent-text: #E39A6B;
+    --color-danger-text: #F2A7A1;
+
+    --color-bg-body: #1C1714;
+    --color-bg-card: #28201B;
+    --color-text-main: #F1E6D8;
+    --color-text-secondary: #C9B8A8;
+    --color-border: #4A3C33;
     --color-shadow: rgba(0, 0, 0, 0.5);
+    --color-backdrop: rgba(0, 0, 0, 0.6);
 
-    --color-input-bg: #333333;
-    --color-input-text: #FFFFFF;
-    --color-input-border: #625D5F;
+    --color-input-bg: #312822;
+    --color-input-text: #F7EFE6;
+    --color-input-border: #5A4A3F;
 
-    --color-table-header-bg: #333333;
-    --color-table-border: #444444;
+    --color-table-header-bg: #312822;
+    --color-table-border: #43372F;
+    --color-nav-hover: rgba(241, 230, 216, 0.1);
 }
 
 /* Theme Toggle Button */
@@ -107,8 +135,8 @@
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    background-color: var(--color-primary-red);
-    color: #FFFFFF;
+    background-color: var(--color-accent);
+    color: var(--color-on-fill);
     border: none;
     box-shadow: 0 4px 6px var(--color-shadow);
     display: flex;
@@ -121,7 +149,7 @@
 }
 
 .btn-theme-toggle:hover {
-    background-color: #a01a2a;
+    background-color: var(--color-accent-hover);
     transform: scale(1.1);
 }
 
@@ -132,7 +160,7 @@
 
 /* Global Styles */
 body {
-    font-family: "Fedra Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-sans);
     background-color: var(--color-bg-body);
     color: var(--color-text-main);
     margin: 0;
@@ -218,7 +246,7 @@ body.theme-shift main {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: "Fedra Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-sans);
     color: var(--color-text-main);
     text-align: center;
     margin-bottom: 20px;
@@ -226,7 +254,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 p, span, div, label, li, td, th {
-    font-family: "Fedra Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-sans);
 }
 
 a {
@@ -240,13 +268,6 @@ a {
     margin: 0 auto;
 }
 
-.logo {
-    display: block;
-    margin: 0 auto 20px auto;
-    width: 200px;
-    height: auto;
-}
-
 .site-header {
     align-items: center;
     box-sizing: border-box;
@@ -258,13 +279,53 @@ a {
     width: 100%;
 }
 
-.site-logo {
-    display: block;
-    height: auto;
-    max-height: 76px;
-    max-width: 210px;
-    object-fit: contain;
-    width: min(210px, 100%);
+/* Marca: símbolo em SVG inline mais o nome em texto. Como o SVG pinta com
+   as variáveis de cor, a mesma marcação serve aos dois temas. */
+.brand {
+    align-items: center;
+    color: var(--color-text-main);
+    display: inline-flex;
+    gap: 10px;
+    justify-self: start;
+    min-width: 0;
+}
+
+.brand-mark {
+    flex: none;
+    height: 48px;
+    width: 48px;
+}
+
+.brand-mark-cup {
+    fill: var(--color-text-main);
+}
+
+.brand-mark-line {
+    fill: none;
+    stroke: var(--color-text-main);
+    stroke-linecap: round;
+    stroke-width: 4;
+}
+
+.brand-mark-check {
+    fill: none;
+    stroke: var(--color-accent-text);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 5;
+}
+
+.brand-name {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.brand-name strong {
+    color: var(--color-accent-text);
+    font-weight: inherit;
 }
 
 /* Card Component */
@@ -280,8 +341,8 @@ a {
 }
 
 .success-box {
-    background-color: var(--color-primary-blue);
-    color: #FFFFFF;
+    background-color: var(--color-primary);
+    color: var(--color-on-fill);
     padding: 20px;
     border-radius: 8px;
     text-align: center;
@@ -289,7 +350,7 @@ a {
 }
 
 .success-box h1 {
-    color: #FFFFFF;
+    color: var(--color-on-fill);
     margin: 0;
     font-size: 1.5em;
 }
@@ -343,7 +404,7 @@ select {
     border-radius: 4px;
     background-color: var(--color-input-bg);
     color: var(--color-input-text);
-    font-family: "Fedra Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-sans);
     font-size: 1rem;
     min-height: var(--control-min-height);
     box-sizing: border-box;
@@ -359,7 +420,7 @@ button {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-family: "Fedra Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-sans);
     font-size: 1rem;
     font-weight: 700;
     text-align: center;
@@ -371,22 +432,22 @@ button {
 
 .btn-primary,
 input[type="submit"] {
-    background-color: var(--color-primary-blue);
-    color: #FFFFFF;
+    background-color: var(--color-primary);
+    color: var(--color-on-fill);
 }
 
 .btn-primary:hover,
 input[type="submit"]:hover {
-    background-color: #15224a; /* Darker shade of primary blue */
+    background-color: var(--color-primary-hover);
 }
 
 .btn-secondary {
-    background-color: var(--color-primary-red);
-    color: #FFFFFF;
+    background-color: var(--color-accent);
+    color: var(--color-on-fill);
 }
 
 .btn-secondary:hover {
-    background-color: #a01a2a; /* Darker shade of primary red */
+    background-color: var(--color-accent-hover);
 }
 
 /* Table Styles */
@@ -538,7 +599,7 @@ th {
 .order-header h2 {
     margin: 0;
     font-size: 1.2em;
-    color: var(--color-primary-red); /* Highlight room/title */
+    color: var(--color-accent-text); /* Highlight room/title */
     text-align: left;
 }
 
@@ -568,7 +629,7 @@ th {
 
 .btn-concluir {
     background-color: var(--color-success); /* Use variable */
-    color: white;
+    color: var(--color-on-fill);
     width: 100%;
 }
 
@@ -622,10 +683,6 @@ th {
     max-width: var(--panel-wide-max);
 }
 
-.brand-link {
-    display: block;
-}
-
 .page-heading {
     margin-bottom: 24px;
     text-align: center;
@@ -641,7 +698,7 @@ th {
 }
 
 .eyebrow {
-    color: var(--color-primary-red);
+    color: var(--color-accent-text);
     font-size: 0.78rem;
     font-weight: 700;
     letter-spacing: 0;
@@ -667,9 +724,9 @@ th {
 }
 
 .alert-error {
-    background: rgba(193, 32, 51, 0.1);
-    border: 1px solid rgba(193, 32, 51, 0.35);
-    color: var(--color-primary-red);
+    background: color-mix(in srgb, var(--color-danger-text) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-danger-text) 35%, transparent);
+    color: var(--color-danger-text);
 }
 
 .alert-success {
@@ -683,7 +740,7 @@ th {
 }
 
 .text-link {
-    color: var(--color-primary-red);
+    color: var(--color-accent-text);
     display: block;
     font-weight: 700;
     margin-top: 18px;
@@ -729,7 +786,7 @@ th {
 
 .success-banner {
     background-color: var(--color-success);
-    color: #FFFFFF;
+    color: var(--color-on-fill);
     /* Mantém o respiro acima da faixa, como na tela de confirmação de pedido. */
     margin: 0 calc(var(--panel-padding-x) * -1) 24px;
     padding: 22px var(--panel-padding-x);
@@ -738,7 +795,7 @@ th {
 
 .success-banner h1,
 .success-banner .eyebrow {
-    color: #FFFFFF;
+    color: var(--color-on-fill);
     margin-bottom: 0;
 }
 
@@ -806,7 +863,7 @@ th {
 
 .btn-success {
     background-color: var(--color-success);
-    color: #FFFFFF;
+    color: var(--color-on-fill);
 }
 
 .btn-success:hover {
@@ -820,7 +877,7 @@ th {
 
 .modal-backdrop {
     align-items: center;
-    background-color: rgba(10, 18, 38, 0.45);
+    background-color: var(--color-backdrop);
     bottom: 0;
     display: flex;
     justify-content: center;
@@ -971,7 +1028,7 @@ th {
 }
 
 .admin-action-card:hover {
-    border-color: var(--color-primary-red);
+    border-color: var(--color-accent-text);
 }
 
 .admin-create-form {
@@ -1047,7 +1104,7 @@ th {
 }
 
 .sortable-row:hover {
-    border-color: var(--color-primary-red);
+    border-color: var(--color-accent-text);
 }
 
 .sortable-row.is-dragging {
@@ -1057,7 +1114,7 @@ th {
 
 .drag-handle {
     align-items: center;
-    background-color: rgba(27, 44, 93, 0.08);
+    background-color: var(--color-nav-hover);
     border: 1px solid var(--color-border);
     color: var(--color-text-main);
     cursor: grab;
@@ -1092,7 +1149,7 @@ th {
 }
 
 .save-indicator.is-error {
-    color: var(--color-primary-red);
+    color: var(--color-danger-text);
 }
 
 .table-wrapper {
@@ -1148,7 +1205,7 @@ th {
 }
 
 .status-pill.is-inactive {
-    background-color: rgba(98, 93, 95, 0.14);
+    background-color: color-mix(in srgb, var(--color-text-secondary) 14%, transparent);
     color: var(--color-text-secondary);
 }
 
@@ -1187,10 +1244,17 @@ th {
         padding-right: 56px;
     }
 
-    .site-logo {
+    .brand {
         justify-self: center;
-        max-height: 56px;
-        width: min(160px, 52vw);
+    }
+
+    .brand-mark {
+        height: 40px;
+        width: 40px;
+    }
+
+    .brand-name {
+        font-size: 1.2rem;
     }
 
     .dashboard-header,
@@ -1237,15 +1301,6 @@ th {
         flex: 1 1 auto;
         padding: 8px 10px;
         text-align: center;
-    }
-
-    .logo {
-        width: 160px;
-    }
-
-    .site-logo {
-        max-height: 56px;
-        width: min(164px, 52vw);
     }
 
     .panel {
@@ -1312,7 +1367,7 @@ th {
 }
 
 .btn-link:hover {
-    color: var(--color-primary-red);
+    color: var(--color-accent-text);
 }
 
 .form-note {
@@ -1336,18 +1391,18 @@ th {
 
 .error-banner {
     border-radius: 8px 8px 0 0;
-    color: #FFFFFF;
+    color: var(--color-on-fill);
     margin: calc(var(--panel-padding-y) * -1) calc(var(--panel-padding-x) * -1) 24px;
     padding: 26px var(--panel-padding-x) 22px;
     text-align: center;
 }
 
 .error-banner-alert {
-    background-color: var(--color-primary-red);
+    background-color: var(--color-danger);
 }
 
 .error-banner-info {
-    background-color: var(--color-primary-blue);
+    background-color: var(--color-primary);
 }
 
 .error-banner .eyebrow {
@@ -1396,8 +1451,8 @@ th {
 }
 
 .error-help li::before {
-    color: var(--color-primary-red);
-    content: "2";
+    color: var(--color-accent-text);
+    content: "\2022";
     font-weight: 700;
     left: 4px;
     position: absolute;
@@ -1474,11 +1529,11 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 [tabindex]:focus-visible {
-    outline: 3px solid var(--color-primary-red);
+    outline: 3px solid var(--color-accent-text);
     outline-offset: 2px;
 }
 
 .drag-handle:focus-visible {
-    background-color: var(--color-primary-red);
-    color: #FFFFFF;
+    background-color: var(--color-accent);
+    color: var(--color-on-fill);
 }

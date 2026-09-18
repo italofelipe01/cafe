@@ -13,7 +13,7 @@ class TestPublicOrderFlow(AppTestCase):
     def test_index_lista_escritorios_ativos(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("EBM Office Goiânia".encode(), response.data)
+        self.assertIn(b"Sede Centro", response.data)
 
     def test_index_renderiza_todas_as_salas_para_funcionar_sem_javascript(self):
         response = self.client.get("/")
@@ -21,17 +21,17 @@ class TestPublicOrderFlow(AppTestCase):
 
         # As salas vêm agrupadas por escritório no próprio HTML: sem isso, a
         # página dependeria de JavaScript para ser utilizável.
-        self.assertIn('<optgroup label="EBM Office Goiânia"', html)
-        self.assertIn("Sala Aton", html)
-        self.assertIn("Sala Smart Cambuí", html)
+        self.assertIn('<optgroup label="Sede Centro"', html)
+        self.assertIn("Sala Bourbon", html)
+        self.assertIn("Sala Arábica", html)
 
     def test_get_rooms_aceita_get_e_post(self):
-        via_post = self.client.post("/get_rooms", json={"office": "EBM Office Goiânia"})
-        via_get = self.client.get("/api/rooms?office=EBM Office Goiânia")
+        via_post = self.client.post("/get_rooms", json={"office": "Sede Centro"})
+        via_get = self.client.get("/api/rooms?office=Sede Centro")
 
         self.assertEqual(via_post.status_code, 200)
         self.assertEqual(via_get.status_code, 200)
-        self.assertIn("Sala Aton", via_post.get_json())
+        self.assertIn("Sala Bourbon", via_post.get_json())
         self.assertEqual(via_post.get_json(), via_get.get_json())
 
     def test_get_rooms_com_escritorio_invalido(self):
@@ -41,14 +41,14 @@ class TestPublicOrderFlow(AppTestCase):
 
     def test_select_room(self):
         response = self.client.post(
-            "/select_room", data={"office": "EBM Office Goiânia", "room": "Sala Aton"}
+            "/select_room", data={"office": "Sede Centro", "room": "Sala Bourbon"}
         )
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Sala Aton", response.data)
+        self.assertIn(b"Sala Bourbon", response.data)
 
     def test_select_room_recusa_par_invalido(self):
         response = self.client.post(
-            "/select_room", data={"office": "EBM Office Goiânia", "room": "Sala Wish"}
+            "/select_room", data={"office": "Sede Centro", "room": "Sala Geisha"}
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("Escolha um escritório e uma sala válidos".encode(), response.data)
@@ -61,8 +61,8 @@ class TestPublicOrderFlow(AppTestCase):
 
         with self.app.app_context():
             order = Order.query.one()
-            self.assertEqual(order.office.name, "EBM Office Goiânia")
-            self.assertEqual(order.space.name, "Sala Aton")
+            self.assertEqual(order.office.name, "Sede Centro")
+            self.assertEqual(order.space.name, "Sala Bourbon")
             self.assertEqual(len(order.items), 2)
 
     def test_submit_form_exige_ao_menos_um_item(self):
@@ -73,7 +73,7 @@ class TestPublicOrderFlow(AppTestCase):
     def test_submit_form_recusa_sala_de_outro_escritorio(self):
         response = self.client.post(
             "/submit_form",
-            data={"office": "EBM Office Campinas", "room": "Sala Aton", "copo": "1"},
+            data={"office": "Filial Sul", "room": "Sala Bourbon", "copo": "1"},
         )
         self.assertEqual(response.status_code, 400)
         self.assertIn("Escritório ou sala inválidos".encode(), response.data)
@@ -145,7 +145,7 @@ class TestCopaDashboard(AppTestCase):
 
         orders = response.get_json()
         self.assertEqual(len(orders), 1)
-        self.assertEqual(orders[0]["room"], "Sala Aton")
+        self.assertEqual(orders[0]["room"], "Sala Bourbon")
         self.assertEqual(orders[0]["items"]["Copo"], 2)
 
     def test_conclui_pedido(self):
@@ -202,13 +202,13 @@ class TestAdminCatalog(AppTestCase):
 
     def test_cria_escritorio_sala_e_insumo(self):
         response = self.client.post(
-            "/admin/offices", data={"name": "EBM Teste"}, follow_redirects=True
+            "/admin/offices", data={"name": "Unidade Teste"}, follow_redirects=True
         )
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"EBM Teste", response.data)
+        self.assertIn(b"Unidade Teste", response.data)
 
         with self.app.app_context():
-            office_id = Office.query.filter_by(name="EBM Teste").one().id
+            office_id = Office.query.filter_by(name="Unidade Teste").one().id
 
         response = self.client.post(
             "/admin/spaces",
@@ -233,12 +233,12 @@ class TestAdminCatalog(AppTestCase):
 
     def test_recusa_escritorio_duplicado(self):
         response = self.client.post(
-            "/admin/offices", data={"name": "EBM Office Goiânia"}, follow_redirects=True
+            "/admin/offices", data={"name": "Sede Centro"}, follow_redirects=True
         )
         self.assertIn("Já existe um escritório com esse nome".encode(), response.data)
 
         with self.app.app_context():
-            self.assertEqual(Office.query.filter_by(name="EBM Office Goiânia").count(), 1)
+            self.assertEqual(Office.query.filter_by(name="Sede Centro").count(), 1)
 
     def test_recusa_escritorio_sem_nome(self):
         response = self.client.post(
@@ -248,25 +248,25 @@ class TestAdminCatalog(AppTestCase):
 
     def test_renomeia_escritorio(self):
         with self.app.app_context():
-            office_id = Office.query.filter_by(name="EBM Office Campinas").one().id
+            office_id = Office.query.filter_by(name="Filial Sul").one().id
 
         response = self.client.post(
             f"/admin/offices/{office_id}/update",
-            data={"name": "EBM Campinas"},
+            data={"name": "Unidade Sul"},
             follow_redirects=True,
         )
         self.assertIn("Escritório atualizado".encode(), response.data)
 
         with self.app.app_context():
-            self.assertEqual(self.fetch(Office, office_id).name, "EBM Campinas")
+            self.assertEqual(self.fetch(Office, office_id).name, "Unidade Sul")
 
     def test_renomear_para_nome_existente_e_recusado(self):
         with self.app.app_context():
-            office_id = Office.query.filter_by(name="EBM Office Campinas").one().id
+            office_id = Office.query.filter_by(name="Filial Sul").one().id
 
         response = self.client.post(
             f"/admin/offices/{office_id}/update",
-            data={"name": "EBM Office Goiânia"},
+            data={"name": "Sede Centro"},
             follow_redirects=True,
         )
         self.assertIn("Já existe outro escritório com esse nome".encode(), response.data)
@@ -279,7 +279,7 @@ class TestAdminCatalog(AppTestCase):
 
     def test_inativar_escritorio_cascateia_para_as_salas(self):
         with self.app.app_context():
-            office = Office.query.filter_by(name="EBM Office Goiânia").one()
+            office = Office.query.filter_by(name="Sede Centro").one()
             office_id = office.id
             space_ids = [space.id for space in office.spaces]
 
@@ -299,7 +299,7 @@ class TestAdminCatalog(AppTestCase):
 
     def test_sala_de_escritorio_inativo_nao_pode_ser_reativada(self):
         with self.app.app_context():
-            office = Office.query.filter_by(name="EBM Office Campinas").one()
+            office = Office.query.filter_by(name="Filial Sul").one()
             office_id, space_id = office.id, office.spaces[0].id
 
         self.client.post(f"/admin/offices/{office_id}/toggle", follow_redirects=True)
@@ -313,21 +313,21 @@ class TestAdminCatalog(AppTestCase):
 
     def test_sala_inativa_some_do_formulario_publico(self):
         with self.app.app_context():
-            space_id = Space.query.filter_by(name="Sala Aton").one().id
+            space_id = Space.query.filter_by(name="Sala Bourbon").one().id
 
         self.client.post(f"/admin/spaces/{space_id}/toggle", follow_redirects=True)
 
-        response = self.client.post("/get_rooms", json={"office": "EBM Office Goiânia"})
+        response = self.client.post("/get_rooms", json={"office": "Sede Centro"})
         self.assertEqual(response.status_code, 200)
-        self.assertNotIn("Sala Aton", response.get_json())
+        self.assertNotIn("Sala Bourbon", response.get_json())
 
     def test_recusa_sala_duplicada_no_mesmo_escritorio(self):
         with self.app.app_context():
-            office_id = Office.query.filter_by(name="EBM Office Goiânia").one().id
+            office_id = Office.query.filter_by(name="Sede Centro").one().id
 
         response = self.client.post(
             "/admin/spaces",
-            data={"office_id": str(office_id), "name": "Sala Aton"},
+            data={"office_id": str(office_id), "name": "Sala Bourbon"},
             follow_redirects=True,
         )
         self.assertIn("Já existe uma sala com esse nome".encode(), response.data)
@@ -358,7 +358,7 @@ class TestAdminCatalog(AppTestCase):
         self.client.post(f"/admin/products/{product_id}/toggle", follow_redirects=True)
 
         response = self.client.post(
-            "/select_room", data={"office": "EBM Office Goiânia", "room": "Sala Aton"}
+            "/select_room", data={"office": "Sede Centro", "room": "Sala Bourbon"}
         )
         self.assertNotIn(b'name="copo"', response.data)
 
@@ -454,7 +454,7 @@ class TestAdminFiltersAndHistory(AppTestCase):
         response = self.client.get("/admin/history")
         self.assertEqual(response.status_code, 200)
         self.assertIn(f"#{order_id}".encode(), response.data)
-        self.assertIn(b"Sala Aton", response.data)
+        self.assertIn(b"Sala Bourbon", response.data)
 
     def test_historico_soma_os_totais_do_periodo(self):
         self.submit_order(copo="3", cafe_expresso_sem_acucar="2", limpeza_sala="Sim")
@@ -495,7 +495,7 @@ class TestAdminFiltersAndHistory(AppTestCase):
 
         with self.app.app_context():
             order_id = Order.query.one().id
-            outro_id = Office.query.filter_by(name="EBM Office Campinas").one().id
+            outro_id = Office.query.filter_by(name="Filial Sul").one().id
 
         self.login_as_admin()
         self.client.post(f"/api/complete_order/{order_id}")

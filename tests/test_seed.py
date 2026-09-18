@@ -92,7 +92,7 @@ class TestSeedIdempotence(unittest.TestCase):
 
     def test_reinicio_preserva_escritorio_inativado(self):
         with self.app.app_context():
-            office = Office.query.filter_by(name="EBM Office Campinas").one()
+            office = Office.query.filter_by(name="Filial Sul").one()
             office.active = False
             for space in office.spaces:
                 space.active = False
@@ -101,7 +101,7 @@ class TestSeedIdempotence(unittest.TestCase):
         self.restart()
 
         with self.app.app_context():
-            office = Office.query.filter_by(name="EBM Office Campinas").one()
+            office = Office.query.filter_by(name="Filial Sul").one()
             self.assertFalse(office.active)
             self.assertTrue(all(not space.active for space in office.spaces))
 
@@ -109,7 +109,7 @@ class TestSeedIdempotence(unittest.TestCase):
         """O estado contraditório que fazia um escritório sumir do formulário."""
 
         with self.app.app_context():
-            office_id = Office.query.filter_by(name="EBM Office Campinas").one().id
+            office_id = Office.query.filter_by(name="Filial Sul").one().id
 
         client = self.app.test_client()
         client.post("/login", data={"password": "admin-teste"})
@@ -128,20 +128,20 @@ class TestSeedIdempotence(unittest.TestCase):
 
     def test_sala_nova_de_escritorio_inativo_nasce_inativa(self):
         with self.app.app_context():
-            office = Office.query.filter_by(name="EBM Office Campinas").one()
+            office = Office.query.filter_by(name="Filial Sul").one()
             office.active = False
             for space in office.spaces:
                 space.active = False
             # Simula uma sala acrescentada ao catálogo semente depois.
-            Space.query.filter_by(office_id=office.id, name="Sala Wish Taquaral").delete()
+            Space.query.filter_by(office_id=office.id, name="Sala Catuaí").delete()
             db.session.commit()
 
         self.restart()
 
         with self.app.app_context():
-            office = Office.query.filter_by(name="EBM Office Campinas").one()
+            office = Office.query.filter_by(name="Filial Sul").one()
             nova = Space.query.filter_by(
-                office_id=office.id, name="Sala Wish Taquaral"
+                office_id=office.id, name="Sala Catuaí"
             ).one()
             self.assertFalse(nova.active)
 

@@ -1,4 +1,4 @@
-# Espaço Café EBM — Guia para o Claude
+# Copa Pronta — Guia para o Claude
 
 Contexto operacional deste repositório. Leia antes de propor código, investigar bug ou
 desenhar feature. O README descreve o produto para quem opera; este arquivo descreve as
@@ -60,7 +60,7 @@ app/
 ├── security.py     perfis admin/copa, comparação de senha em tempo constante,
 │                   login_required, safe_redirect_target
 ├── seed.py         catálogo inicial (escritórios, salas, insumos), semeadura aditiva
-├── static/         script.js (global), dashboard.js (copa), styles.css, font/, images/
+├── static/         script.js (global), dashboard.js (copa), styles.css, icon.svg/.png
 └── templates/      base.html, pedido (index, sala_form, confirm_pedido), copa_dashboard,
                     login, admin/*, errors/*
 config.py           Config / Development / Testing / Production, resolve_config()
@@ -158,6 +158,6 @@ Se um gate não puder rodar, a resposta final diz qual, por quê e o risco que f
   persistente, deixe `False` e use `flask db upgrade`.
 - `semantic-release` no Windows precisa de `$env:PYTHONUTF8="1"`: sem isso ele lê o CHANGELOG
   em cp1252 e falha com `'charmap' codec can't decode`.
-- A fonte Fedra Sans Pro em `app/static/font/` é comercial. Veja [NOTICE.md](NOTICE.md)
-  antes de publicar o repositório ou servir o portal em domínio público.
+- A marca do cabeçalho é SVG inline em `base.html`, não imagem: para mudar a cor dela, mude
+  as variáveis, não o arquivo. `icon.svg` (favicon) tem cores fixas e o `icon.png` é gerado dele.
 - `POST /get_rooms` existe só por compatibilidade; o caminho atual é `GET /api/rooms`.

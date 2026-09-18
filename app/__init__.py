@@ -1,4 +1,4 @@
-"""Application factory do Espaço Café EBM."""
+"""Application factory do Copa Pronta."""
 
 from __future__ import annotations
 
