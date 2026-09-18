@@ -47,8 +47,16 @@ app/
     errors/                # Páginas 400, 401, 404, 429 e 500
 migrations/                # Alembic: esquema versionado
 tests/                     # Suíte automatizada
+docs/
+  DECISIONS.md             # Decisões de arquitetura e processo, com o motivo
+  RELEASE.md               # Versionamento semântico e publicação
+.github/
+  workflows/quality.yml    # Gate: lint, tipos, JS, testes e migrations
+  workflows/release.yml    # Versão, changelog, tag e GitHub Release a cada push na main
+  dependabot.yml           # Atualização semanal das actions
 config.py                  # Configuração por ambiente
 run.py                     # Entrada local do servidor
+CLAUDE.md                  # Regras do código para agentes (e para quem mais quiser)
 ```
 
 ## Requisitos
@@ -260,9 +268,19 @@ O que continua fora do escopo:
 python -m unittest discover -s . -p "test_*.py"   # suíte completa
 ruff check .                                      # lint
 ruff check --fix .                                # lint com correção automática
+pyright                                           # verificação de tipos
+node --check app/static/script.js                 # sintaxe JS (idem dashboard.js)
 ```
 
 A suíte usa banco em memória e não altera dados locais. Os testes de semeadura usam um arquivo temporário, porque o cenário que eles cobrem é justamente o de reiniciar o servidor sobre um banco persistente.
+
+O workflow `Quality Gate` roda tudo isso em cada PR para `main` (os testes em Python 3.11, 3.12 e 3.13), aplica as migrations num banco limpo e confere que a semeadura é idempotente.
+
+## Versionamento
+
+A versão segue [SemVer](https://semver.org/lang/pt-BR/) e é calculada a partir dos commits, que seguem [Conventional Commits](https://www.conventionalcommits.org/pt-br/): `fix` gera patch, `feat` gera minor e `BREAKING CHANGE` gera major. A cada push para `main`, o workflow `Release` roda o mesmo gate e, se ele passar, atualiza `pyproject.toml` e `CHANGELOG.md`, cria a tag `vX.Y.Z` e publica a GitHub Release.
+
+Versão e changelog não se editam à mão. Detalhes e diagnóstico em [docs/RELEASE.md](docs/RELEASE.md).
 
 ## Licença
 
@@ -271,7 +289,7 @@ ser publicar o código, substitua o arquivo por uma licença aberta (MIT, Apache
 e resolva antes a questão da fonte descrita em [NOTICE.md](NOTICE.md).
 
 Como contribuir: [CONTRIBUTING.md](CONTRIBUTING.md). Histórico de mudanças:
-[CHANGELOG.md](CHANGELOG.md).
+[CHANGELOG.md](CHANGELOG.md). Decisões de arquitetura: [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Fonte
 

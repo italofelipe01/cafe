@@ -13,15 +13,27 @@ Copy-Item .env.example .env
 
 ```powershell
 ruff check .
+pyright
+node --check app/static/script.js
+node --check app/static/dashboard.js
 python -m unittest discover -s . -p "test_*.py"
 ```
 
-Os dois precisam passar. O CI roda exatamente isso, em Python 3.11, 3.12 e 3.13.
+Todos precisam passar. O workflow `Quality Gate` roda exatamente isso, com os testes em
+Python 3.11, 3.12 e 3.13, e ainda aplica as migrations num banco limpo.
 
 ## Convenções
 
 **Commits** seguem [Conventional Commits](https://www.conventionalcommits.org/pt-br/),
-como o histórico existente: `feat(admin): ...`, `fix(copa): ...`, `chore(deps): ...`.
+em português e sem acentos no assunto, como o histórico existente: `feat(admin): ...`,
+`fix(copa): ...`, `chore(deps): ...`. O tipo decide a versão: `fix`/`perf` geram patch,
+`feat` gera minor, `BREAKING CHANGE:` no rodapé gera major, e os demais não mudam a versão.
+Num squash merge, quem vira o commit é o **título do PR**. Não edite a versão no
+`pyproject.toml` nem o `CHANGELOG.md`: o release escreve os dois (ver
+[docs/RELEASE.md](docs/RELEASE.md)).
+
+**Decisões** que mudam arquitetura, segurança ou processo entram em
+[docs/DECISIONS.md](docs/DECISIONS.md), com o motivo e o custo aceito.
 
 **Código** Python segue o ruff configurado em `pyproject.toml`. Duas regras de
 arquitetura que o linter não verifica:

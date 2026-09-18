@@ -154,6 +154,10 @@ cython_debug/
 *.swo
 *~
 
+# Claude Code: permissões e preferências de cada máquina. O CLAUDE.md da raiz,
+# que descreve o projeto, continua versionado.
+.claude/settings.local.json
+
 # ==========================================================================
 # Específico do Espaço Café EBM
 # ==========================================================================
