@@ -15,18 +15,22 @@ requires-python = ">=3.11"
 #   BREAKING CHANGE:  -> major  (1.0.0 -> 2.0.0)
 #   docs/chore/test/ci/refactor -> nenhum incremento
 #
-# Rodar localmente para ver o que sairia, sem alterar nada:
-#   semantic-release version --print
+# Rodar localmente para ver o que sairia, sem alterar nada (no Windows,
+# com $env:PYTHONUTF8="1", senão o CHANGELOG é lido como cp1252):
+#   semantic-release --noop version --print
+#
+# Processo completo, incluindo o que fazer se uma tag sair do histórico da
+# main: docs/RELEASE.md.
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]
 tag_format = "v{version}"
 commit_message = "chore(release): v{version}\n\nVersão gerada a partir dos commits desde a tag anterior. [skip ci]"
 build_command = ""
-# O CHANGELOG é escrito pelo próprio release, a partir dos commits.
-changelog_file = "CHANGELOG.md"
 
 [tool.semantic_release.branches.main]
-match = "main"
+# Expressão regular: sem as âncoras, qualquer branch com "main" no nome
+# (feat/main-menu, por exemplo) também seria tratada como branch de release.
+match = "^main$"
 
 [tool.semantic_release.changelog]
 # "update" insere a nova versão na marca abaixo em vez de reescrever o arquivo:
@@ -34,6 +38,11 @@ match = "main"
 mode = "update"
 insertion_flag = "<!-- versoes -->"
 exclude_commit_patterns = ["chore\\(release\\):.*"]
+
+[tool.semantic_release.changelog.default_templates]
+# O CHANGELOG é escrito pelo próprio release, a partir dos commits. Na v10 a
+# chave mora aqui; no nível de [tool.semantic_release] ela é ignorada.
+changelog_file = "CHANGELOG.md"
 
 [tool.semantic_release.commit_parser_options]
 # Tipos que geram entrada no changelog, além dos que incrementam a versão.

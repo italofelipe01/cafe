@@ -6,6 +6,10 @@
 # Lint e formatacao. O CI roda `ruff check .` e falha se houver achado.
 ruff
 
+# Verificacao de tipos, configurada em [tool.pyright] do pyproject.toml. O CI
+# roda `pyright` e falha se houver erro. Precisa de Node no PATH (ou baixa um).
+pyright
+
 # Calcula a proxima versao a partir dos commits. No CI roda pela action do
 # workflow de release; aqui serve para conferir antes de empurrar:
 #   semantic-release version --print

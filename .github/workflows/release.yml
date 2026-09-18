@@ -1,85 +1,94 @@
 name: Release
 
-# Versionamento semântico automático.
+# Versionamento semântico automático. Processo completo em docs/RELEASE.md.
 #
 # A versão é derivada das mensagens de commit desde a última tag, segundo a
-# convenção que o projeto já usa (fix -> patch, feat -> minor, BREAKING CHANGE
-# -> major).
+# convenção que o projeto já usa (fix/perf -> patch, feat -> minor,
+# BREAKING CHANGE -> major).
 #
-# O disparo é o término do CI, e não o push: assim a verificação roda uma vez
-# só. Chamar o CI como workflow reutilizável a partir daqui faria cada push
-# executar lint, testes e migrations duas vezes — uma pelo gatilho do próprio
-# CI e outra dentro deste workflow.
+# O gate de qualidade roda aqui dentro, chamado como workflow reutilizável, e
+# não por um gatilho de push próprio: assim cada push para main verifica uma vez
+# só, e o release depende (`needs`) do gate daquele mesmo commit.
 #
 # O passo de release empurra um commit "chore(release): vX.Y.Z" com a versão
 # atualizada no pyproject.toml e o CHANGELOG regenerado, cria a tag e publica
-# a GitHub Release. Esse commit traz [skip ci] para não reentrar no ciclo.
+# a GitHub Release. Push feito com o GITHUB_TOKEN não dispara workflows, então o
+# commit de versão não reentra no ciclo.
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
+  push:
     branches: [main]
   # Permite disparar manualmente pela aba Actions, útil para publicar sem
   # esperar o próximo push.
   workflow_dispatch:
 
-concurrency:
-  # Dois releases simultâneos brigariam pela mesma tag.
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
+permissions:
+  contents: read
 
 jobs:
-  release:
-    runs-on: ubuntu-latest
+  quality:
+    name: Quality Gate
+    # A configuração do semantic-release só conhece main; disparo manual em
+    # outra branch não valida nem versiona.
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/quality.yml
 
-    # Só publica se o CI que disparou este workflow tiver passado. No disparo
-    # manual não há CI associado, e a responsabilidade é de quem clicou.
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+  release:
+    name: Versionar e publicar release
+    needs: quality
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    concurrency:
+      # Dois releases simultâneos brigariam pela mesma tag.
+      group: release-${{ github.ref_name }}
+      cancel-in-progress: false
 
     permissions:
       contents: write # criar a tag, o commit de versão e a Release
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # O semantic-release precisa do histórico completo e das tags para
-          # saber qual foi a última versão e quais commits vieram depois.
+          # saber qual foi a última versão e quais commits vieram depois. O
+          # checkout por nome de branch (e não por SHA) é necessário: com HEAD
+          # desanexado ele não reconhece a branch e não versiona nada.
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
-          # workflow_run roda desanexado do branch; sem isto o commit de versão
-          # não teria para onde ir.
-          ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-tags: true
 
-      - name: Configurar Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
+      # Se outro push chegou a main enquanto o gate rodava, a branch já aponta
+      # para um commit que não passou por ele. Voltar para o SHA disparado
+      # garante que a versão publicada é a do commit verificado; o push do
+      # commit de versão então falha por não ser fast-forward, e o push mais
+      # novo publica a sua própria versão.
+      - name: Fixar o commit verificado
+        run: git reset --hard ${{ github.sha }}
 
       - name: Calcular e aplicar a próxima versão
         id: versao
-        uses: python-semantic-release/python-semantic-release@v10
+        uses: python-semantic-release/python-semantic-release@9a026e9303981c866c3425723009becb2437c757 # v10.6.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           git_committer_name: github-actions[bot]
           git_committer_email: 41898282+github-actions[bot]@users.noreply.github.com
-
-      - name: Publicar a GitHub Release
-        if: steps.versao.outputs.released == 'true'
-        uses: python-semantic-release/publish-action@v10
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.versao.outputs.tag }}
+          # Não há pacote para construir: a Release registra a versão e o
+          # changelog, sem anexar artefatos.
+          build: false
 
       - name: Resumo
+        env:
+          RELEASED: ${{ steps.versao.outputs.released }}
+          VERSION: ${{ steps.versao.outputs.version }}
+          TAG: ${{ steps.versao.outputs.tag }}
         run: |
-          if [ "${{ steps.versao.outputs.released }}" = "true" ]; then
-            echo "### Versão ${{ steps.versao.outputs.version }} publicada" >> $GITHUB_STEP_SUMMARY
-            echo "Tag: \`${{ steps.versao.outputs.tag }}\`" >> $GITHUB_STEP_SUMMARY
+          if [ "$RELEASED" = "true" ]; then
+            echo "### Versão $VERSION publicada" >> "$GITHUB_STEP_SUMMARY"
+            echo "Tag: \`$TAG\`" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "### Nenhuma versão publicada" >> $GITHUB_STEP_SUMMARY
-            echo "Nenhum commit desde a última tag exige incremento de versão." >> $GITHUB_STEP_SUMMARY
-            echo "Apenas \`fix\`, \`feat\`, \`perf\` e \`BREAKING CHANGE\` incrementam." >> $GITHUB_STEP_SUMMARY
+            echo "### Nenhuma versão publicada" >> "$GITHUB_STEP_SUMMARY"
+            echo "Nenhum commit desde a última tag exige incremento de versão." >> "$GITHUB_STEP_SUMMARY"
+            echo "Apenas \`fix\`, \`feat\`, \`perf\` e \`BREAKING CHANGE\` incrementam." >> "$GITHUB_STEP_SUMMARY"
           fi
