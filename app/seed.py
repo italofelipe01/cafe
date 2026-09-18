@@ -20,35 +20,26 @@ logger = logging.getLogger(__name__)
 
 
 OFFICES_DATA: dict[str, list[str]] = {
-    "EBM Office Goiânia": [
+    "Sede Centro": [
         "Recepção",
-        "Sala Aton",
-        "Sala Chateau Marista",
-        "Grann Parc",
-        "Sala Metropolitan",
-        "Sala Nasa",
-        "Sala Uber",
-        "Sala Walk",
-        "Studio",
-    ],
-    "EBM Office Campinas": ["Sala Smart Cambuí", "Sala Wish Taquaral"],
-    "EBM Espaço Goiânia": [
+        "Sala Bourbon",
+        "Sala Robusta",
+        "Sala Mundo Novo",
+        "Sala Acaiá",
+        "Sala Icatu",
         "Auditório",
-        "Long Wide (Primeiro Andar)",
-        "Lounge Wish",
-        "Relacionamento 1",
-        "Relacionamento 2",
-        "Relacionamento 3",
-        "Sala Kazas",
-        "Sala Metropolitan",
-        "Sala Smart",
-        "Sala The Sun",
-        "Sala Vinhas",
-        "Sala Wish",
-        "Sala Wish Areião",
-        "Sala Wish Trinta e Sete",
-        "Sala Wish Vaca Brava",
-        "Wide",
+        "Sala Obatã",
+    ],
+    "Filial Sul": ["Sala Arábica", "Sala Catuaí"],
+    "Espaço Eventos": [
+        "Auditório",
+        "Lounge",
+        "Sala Geisha",
+        "Sala Conilon",
+        "Sala Maragogipe",
+        "Sala Topázio",
+        "Sala de Reunião 1",
+        "Sala de Reunião 2",
     ],
 }
 

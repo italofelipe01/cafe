@@ -1,5 +1,5 @@
 [project]
-name = "espaco-cafe-ebm"
+name = "copa-pronta"
 version = "1.0.0"
 description = "Portal interno de solicitação de itens de copa por sala."
 requires-python = ">=3.11"

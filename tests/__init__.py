@@ -1,1 +1,1 @@
-"""Suíte de testes do Espaço Café EBM."""
+"""Suíte de testes do Copa Pronta."""

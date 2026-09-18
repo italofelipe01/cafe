@@ -56,7 +56,8 @@ com a mensagem pronta para a tela.
 
 **Motivo:** permite uma Content-Security-Policy sem origem externa e sem `unsafe-inline`.
 **Custo:** a fonte Fedra Sans Pro, comercial, fica versionada em `app/static/font/`. A licença
-precisa ser confirmada antes de publicar o repositório (ver `NOTICE.md`).
+precisa ser confirmada antes de publicar o repositório (ver `NOTICE.md`). *Superado em
+2026-09-18: a fonte saiu junto com a identidade anterior (ver "Identidade própria").*
 **Regra:** o único script inline é o de tema, liberado por nonce a cada requisição. Nada de CDN.
 
 ## 2026-08-10 — Configuração lida na criação da aplicação
@@ -100,3 +101,14 @@ lança mais nenhuma versão. Os três `fix` posteriores (`202f150`, `c77bbcd`, `
 seriam publicados.
 **Regra:** a tag vai para `7be83a5`, cuja árvore é idêntica à base do release. Simulado
 localmente: a próxima versão passa a ser 1.0.1. Nunca reescrever a `main` depois de uma release.
+
+## 2026-09-18 — Identidade própria: Copa Pronta
+
+**Motivo:** o projeto vai virar público e não pode carregar nome, logo, paleta, fonte ou dados
+da empresa onde nasceu.
+**Custo:** a fonte do sistema no lugar da Fedra Sans Pro muda um pouco o desenho do texto. Os
+escritórios e salas do catálogo inicial agora são fictícios; um banco persistente já semeado não
+perde nada, mas ganharia os fictícios se `flask init-db` rodasse de novo sobre ele.
+**Regra:** marca em SVG inline pintada por `--color-*`; `--color-accent` é fundo com texto branco
+e `--color-accent-text` é o acento como texto, que clareia no tema escuro. Nenhum arquivo de
+fonte, logo ou dado de terceiro versionado.

@@ -73,6 +73,6 @@ class AppTestCase(unittest.TestCase):
         return get_or_fail(model, primary_key)
 
     def submit_order(self, **items: str):
-        payload = {"office": "EBM Office Goiânia", "room": "Sala Aton"}
+        payload = {"office": "Sede Centro", "room": "Sala Bourbon"}
         payload.update(items)
         return self.client.post("/submit_form", data=payload)

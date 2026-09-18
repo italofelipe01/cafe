@@ -171,7 +171,7 @@ class TestCsrfProtection(AppTestCase):
 
     def test_consulta_de_salas_permanece_isenta(self):
         # É leitura sem efeito colateral: exigir token só quebraria o formulário.
-        response = self.client.post("/get_rooms", json={"office": "EBM Office Goiânia"})
+        response = self.client.post("/get_rooms", json={"office": "Sede Centro"})
         self.assertEqual(response.status_code, 200)
 
     def test_todo_formulario_post_carrega_o_campo_de_token(self):

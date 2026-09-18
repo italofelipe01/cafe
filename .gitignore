@@ -159,7 +159,7 @@ cython_debug/
 .claude/settings.local.json
 
 # ==========================================================================
-# Específico do Espaço Café EBM
+# Específico do Copa Pronta
 # ==========================================================================
 
 # Ruff. Sem esta regra o diretório só fica de fora porque o próprio ruff grava

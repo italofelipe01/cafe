@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Escritórios | Admin Café EBM{% endblock %}
+{% block title %}Escritórios | Copa Pronta{% endblock %}
 {% block main_class %}admin-shell{% endblock %}
 
 {% block content %}
@@ -17,7 +17,7 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label for="office-name">Novo escritório</label>
         <div class="inline-form">
-            <input id="office-name" name="name" type="text" class="form-control" required placeholder="Ex.: EBM Office Goiânia">
+            <input id="office-name" name="name" type="text" class="form-control" required placeholder="Ex.: Sede Centro">
             <button type="submit" class="btn btn-primary">Cadastrar</button>
         </div>
     </form>

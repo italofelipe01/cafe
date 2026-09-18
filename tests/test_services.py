@@ -76,7 +76,7 @@ class TestSlugAndKeys(AppTestCase):
 class TestOrderServices(AppTestCase):
     def test_cria_pedido(self):
         with self.app.app_context():
-            space = services.require_space("EBM Office Goiânia", "Sala Aton")
+            space = services.require_space("Sede Centro", "Sala Bourbon")
             produto = Product.query.filter_by(form_key="copo").one()
             order = services.create_order(space, [(produto, 4)])
 
@@ -86,11 +86,11 @@ class TestOrderServices(AppTestCase):
 
     def test_require_space_recusa_par_invalido(self):
         with self.app.app_context(), self.assertRaises(ServiceError):
-            services.require_space("EBM Office Campinas", "Sala Aton")
+            services.require_space("Filial Sul", "Sala Bourbon")
 
     def test_conclui_e_recusa_repeticao(self):
         with self.app.app_context():
-            space = services.require_space("EBM Office Goiânia", "Sala Aton")
+            space = services.require_space("Sede Centro", "Sala Bourbon")
             produto = Product.query.filter_by(form_key="copo").one()
             order = services.create_order(space, [(produto, 1)])
 
@@ -125,7 +125,7 @@ class TestOrderServices(AppTestCase):
 class TestCatalogServices(AppTestCase):
     def test_toggle_de_escritorio_leva_as_salas_junto(self):
         with self.app.app_context():
-            office = Office.query.filter_by(name="EBM Office Campinas").one()
+            office = Office.query.filter_by(name="Filial Sul").one()
 
             desativado = services.toggle_office(office.id)
             self.assertFalse(desativado.active)
@@ -137,7 +137,7 @@ class TestCatalogServices(AppTestCase):
 
     def test_sala_criada_em_escritorio_inativo_nasce_inativa(self):
         with self.app.app_context():
-            office = Office.query.filter_by(name="EBM Office Campinas").one()
+            office = Office.query.filter_by(name="Filial Sul").one()
             services.toggle_office(office.id)
 
             space = services.create_space(str(office.id), "Sala Nova")
@@ -167,13 +167,13 @@ class TestCatalogServices(AppTestCase):
 
     def test_active_offices_ignora_escritorio_sem_sala_ativa(self):
         with self.app.app_context():
-            office = Office.query.filter_by(name="EBM Office Campinas").one()
+            office = Office.query.filter_by(name="Filial Sul").one()
             for space in office.spaces:
                 space.active = False
             db.session.commit()
 
             nomes = [o.name for o in services.active_offices()]
-            self.assertNotIn("EBM Office Campinas", nomes)
+            self.assertNotIn("Filial Sul", nomes)
 
     def test_dashboard_stats(self):
         with self.app.app_context():

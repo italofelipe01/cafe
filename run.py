@@ -60,7 +60,7 @@ def print_startup_log(
     server: ServerSettings, pid: int | None = None, server_name: str = "Flask"
 ) -> None:
     url = f"http://{display_host(server.host)}:{server.port}"
-    print(f"Espaco Cafe EBM iniciado em {url}", flush=True)
+    print(f"Copa Pronta iniciado em {url}", flush=True)
 
     if server.host in {"0.0.0.0", "::"}:
         lan_ip = get_lan_ip()
