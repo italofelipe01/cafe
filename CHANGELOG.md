@@ -9,6 +9,30 @@ foi escrita à mão e fica no fim.
 
 <!-- versoes -->
 
+## v1.0.1 (2026-09-18)
+
+### Bug Fixes
+
+- **admin**: Corrigir o total de itens no historico de pedidos
+  ([`202f150`](https://github.com/italofelipe01/cafe/commit/202f1506f5458933b3776c60233363d0d50c10f9))
+
+- **ui**: Alinhar o botao Sair a navegacao e ampliar a logo
+  ([`c77bbcd`](https://github.com/italofelipe01/cafe/commit/c77bbcd5e5748986151e6bfeb5ade8770ad01214))
+
+- **ui**: Corrigir as tabelas em telas pequenas
+  ([`3977633`](https://github.com/italofelipe01/cafe/commit/39776332c27350a9d6747775d50525dfaa3d123c))
+
+### Continuous Integration
+
+- Gate unico reutilizavel, actions pinadas por SHA e Dependabot
+  ([`4f2037a`](https://github.com/italofelipe01/cafe/commit/4f2037ac26bfc5e5d6abcbf532dd61c0d552cab4))
+
+### Documentation
+
+- Guia para agentes, registro de decisoes e processo de release
+  ([`b897c53`](https://github.com/italofelipe01/cafe/commit/b897c53116068507b89b90b0fda90daca15f8740))
+
+
 ## [1.0.0] — 2026-08-10
 
 Primeira versão preparada para uso além de `127.0.0.1`.
