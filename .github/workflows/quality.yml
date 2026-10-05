@@ -170,7 +170,9 @@ jobs:
             copa-pronta:ci
           for tentativa in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:8000/health; then
-              docker logs copa | grep -q "Banco pronto: migrations aplicadas"
+              # O log da aplicação sai no stderr do contêiner, e `docker logs`
+              # o reemite no stderr: sem 2>&1, o grep não recebe nada.
+              docker logs copa 2>&1 | grep -q "Banco pronto: migrations aplicadas"
               exit 0
             fi
             sleep 1
