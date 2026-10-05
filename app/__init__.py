@@ -5,17 +5,35 @@ from __future__ import annotations
 import logging
 import os
 import secrets
+import tomllib
 from logging.handlers import RotatingFileHandler
 from typing import Any
 
 import click
 from flask import Flask, g, jsonify, render_template, request
 from flask_wtf.csrf import CSRFError
+from sqlalchemy import inspect as sqlalchemy_inspect
+from sqlalchemy.engine import make_url
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from app.extensions import csrf, db, limiter, migrate
 from config import resolve_config
 
 LOG_FORMAT = "%(asctime)s %(levelname)s [%(name)s] %(message)s"
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def read_version() -> str:
+    """Versão publicada, lida do pyproject.toml que o release atualiza."""
+
+    try:
+        with open(os.path.join(PROJECT_ROOT, "pyproject.toml"), "rb") as handle:
+            return str(tomllib.load(handle)["project"]["version"])
+    except (OSError, KeyError, tomllib.TOMLDecodeError):
+        return "desconhecida"
+
+
+APP_VERSION = read_version()
 
 
 def create_app(config_name: str | None = None) -> Flask:
@@ -24,6 +42,17 @@ def create_app(config_name: str | None = None) -> Flask:
     config_class = resolve_config(config_name)
     app.config.from_object(config_class)
     config_class.init_app(app)
+    app.config["APP_VERSION"] = APP_VERSION
+
+    hops = app.config["TRUST_PROXY_HOPS"]
+    if hops > 0:
+        # Atrás de nginx ou do balanceador da nuvem, o IP do cliente, o esquema
+        # (https) e o prefixo chegam em X-Forwarded-*. Sem isto, o rate limit e
+        # a auditoria veriam todo mundo com o IP do proxy, e o HSTS nunca seria
+        # enviado porque a requisição pareceria http.
+        app.wsgi_app = ProxyFix(  # type: ignore[method-assign]
+            app.wsgi_app, x_for=hops, x_proto=hops, x_host=hops, x_prefix=hops
+        )
 
     configure_logging(app)
     register_extensions(app)
@@ -60,7 +89,11 @@ def configure_logging(app: Flask) -> None:
 
     log_file = app.config["LOG_FILE"]
     if log_file:
-        os.makedirs(os.path.dirname(os.path.abspath(log_file)) or ".", exist_ok=True)
+        # Caminho relativo parte da raiz do projeto, e não da pasta de onde o
+        # comando foi chamado: o mesmo .env serve ao run.py e ao `flask`.
+        if not os.path.isabs(log_file):
+            log_file = os.path.join(PROJECT_ROOT, log_file)
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
         file_handler = RotatingFileHandler(
             log_file, maxBytes=1_000_000, backupCount=5, encoding="utf-8"
         )
@@ -90,8 +123,7 @@ def register_extensions(app: Flask) -> None:
 
 
 def migrations_directory() -> str:
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(root, "migrations")
+    return os.path.join(PROJECT_ROOT, "migrations")
 
 
 def register_blueprints(app: Flask) -> None:
@@ -122,7 +154,10 @@ def register_security_headers(app: Flask) -> None:
 
     @app.context_processor
     def expose_csp_nonce() -> dict[str, Any]:
-        return {"csp_nonce": lambda: getattr(g, "csp_nonce", "")}
+        return {
+            "csp_nonce": lambda: getattr(g, "csp_nonce", ""),
+            "app_version": app.config["APP_VERSION"],
+        }
 
     @app.after_request
     def apply_security_headers(response):
@@ -233,19 +268,56 @@ def register_commands(app: Flask) -> None:
     def check_config_command() -> None:
         """Mostra a configuração efetiva, sem revelar segredos."""
 
-        from config import DEFAULT_SECRET_KEY
+        from config import INSECURE_SECRET_KEYS
 
-        secret_ok = app.config["SECRET_KEY"] != DEFAULT_SECRET_KEY
+        secret_ok = app.config["SECRET_KEY"] not in INSECURE_SECRET_KEYS
+        click.echo(f"Versão:          {app.config['APP_VERSION']}")
         click.echo(f"Ambiente:        {app.config.get('ENV_NAME')}")
         click.echo(f"Debug:           {app.config['DEBUG']}")
-        click.echo(f"Banco:           {app.config['SQLALCHEMY_DATABASE_URI']}")
+        click.echo(f"Banco:           {safe_database_url(app)}")
         click.echo(f"Auto create DB:  {app.config['AUTO_CREATE_DB']}")
+        click.echo(f"Auto migrate:    {app.config['AUTO_MIGRATE']}")
         click.echo(f"SECRET_KEY:      {'definida' if secret_ok else 'PADRÃO INSEGURO'}")
         click.echo(f"Senha admin:     {'definida' if app.config['ADMIN_PASSWORD'] else 'ausente'}")
         click.echo(f"Senha copa:      {'definida' if app.config['COPA_PASSWORD'] else 'ausente'}")
         click.echo(f"CSRF:            {app.config['WTF_CSRF_ENABLED']}")
         click.echo(f"Rate limit:      {app.config['RATELIMIT_ENABLED']}")
+        click.echo(f"Limite em:       {app.config['RATELIMIT_STORAGE_URI'].split('://')[0]}://")
+        click.echo(f"Proxies:         {app.config['TRUST_PROXY_HOPS']}")
+        click.echo(f"URL pública:     {app.config['PUBLIC_BASE_URL'] or '(a da requisição)'}")
         click.echo(f"Cookie seguro:   {app.config['SESSION_COOKIE_SECURE']}")
+
+    @app.cli.command("backup-db")
+    @click.option(
+        "--dir",
+        "directory",
+        default="instance/backups",
+        show_default=True,
+        help="Pasta das cópias (relativa à raiz do projeto).",
+    )
+    @click.option("--keep", default=14, show_default=True, help="Quantas cópias manter.")
+    def backup_db_command(directory: str, keep: int) -> None:
+        """Copia o banco SQLite com segurança, mesmo com o servidor no ar."""
+
+        from app.backup import backup_sqlite, sqlite_path
+
+        with app.app_context():
+            source = sqlite_path(str(db.engine.url))
+        if not source:
+            raise click.ClickException(
+                "O backup integrado é para SQLite em arquivo. Para outro banco, use a "
+                "ferramenta dele (pg_dump no PostgreSQL)."
+            )
+
+        if not os.path.isabs(directory):
+            directory = os.path.join(PROJECT_ROOT, directory)
+        click.echo(f"Cópia gravada em {backup_sqlite(source, directory, max(1, keep))}")
+
+    @app.cli.command("prepare-db")
+    def prepare_db_command() -> None:
+        """Aplica as migrations e semeia o catálogo se o banco estiver vazio."""
+
+        click.echo(prepare_database())
 
 
 def initialize_database() -> None:
@@ -255,6 +327,64 @@ def initialize_database() -> None:
 
     db.create_all()
     seed_database()
+
+
+def safe_database_url(app: Flask) -> str:
+    """URL do banco com a senha mascarada, para log e diagnóstico."""
+
+    return make_url(app.config["SQLALCHEMY_DATABASE_URI"]).render_as_string(
+        hide_password=True
+    )
+
+
+def prepare_database() -> str:
+    """Deixa o banco pronto para servir, sem passo manual.
+
+    Aplica as migrations pendentes (o mesmo que ``flask db upgrade``) e, se o
+    catálogo estiver vazio — primeira subida —, semeia o inicial. Um banco que
+    já tem escritórios ou insumos não é semeado: o catálogo dele pertence a
+    quem administra o portal, e um escritório renomeado voltaria com o nome
+    antigo se a semeadura rodasse de novo.
+
+    Roda dentro de um contexto de aplicação. Chamado pelo ``run.py`` ao subir o
+    servidor (com ``AUTO_MIGRATE``) e pelo comando ``flask prepare-db``.
+    """
+
+    from flask import current_app
+    from flask_migrate import upgrade
+
+    from app.seed import catalog_is_empty, seed_database
+
+    app = current_app
+    steps: list[str] = []
+
+    if app.config["AUTO_CREATE_DB"]:
+        # O esquema já veio de db.create_all() em create_app(). Aplicar as
+        # migrations por cima tentaria criar de novo as mesmas tabelas.
+        steps.append("esquema criado por create_all (AUTO_CREATE_DB)")
+    else:
+        tables = set(sqlalchemy_inspect(db.engine).get_table_names())
+        if tables and "alembic_version" not in tables:
+            raise RuntimeError(
+                "O banco tem tabelas, mas nenhum registro de migration: ele foi criado "
+                "por db.create_all(). Se o esquema está atualizado, marque-o uma vez "
+                "com `flask db stamp head` e suba de novo."
+            )
+        upgrade(directory=migrations_directory())
+        steps.append("migrations aplicadas")
+
+    if catalog_is_empty():
+        created = seed_database()
+        steps.append(
+            f"catálogo inicial semeado ({created['offices']} escritórios, "
+            f"{created['spaces']} salas, {created['products']} insumos)"
+        )
+    else:
+        steps.append("catálogo existente preservado")
+
+    summary = "Banco pronto: " + "; ".join(steps) + "."
+    app.logger.info(summary)
+    return summary
 
 
 def audit(action: str, **details: Any) -> None:

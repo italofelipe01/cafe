@@ -1,0 +1,5 @@
+# Driver do PostgreSQL, para hospedar o banco fora da máquina (nuvem).
+# O SQLite continua sendo o padrão e não precisa de nada além do requirements.txt.
+#   pip install -r requirements-postgres.txt
+-r requirements.txt
+psycopg[binary]
