@@ -9,14 +9,18 @@ e evita que as telas de administração repitam o mesmo bloco de verificação.
 from __future__ import annotations
 
 import re
+import secrets
 import unicodedata
 from datetime import date, datetime, time
-from typing import NamedTuple
+from typing import NamedTuple, TypedDict
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 
 from app.extensions import db
 from app.models import (
+    NOTE_MAX_LENGTH,
     STATUS_COMPLETED,
     STATUS_PENDING,
     Office,
@@ -30,6 +34,7 @@ from app.models import (
 MAX_QUANTITY = 1000
 INPUT_TYPES = {"quantity", "boolean"}
 HISTORY_PAGE_SIZE = 25
+REQUEST_TOKEN_PATTERN = re.compile(r"[A-Za-z0-9_-]{16,64}")
 
 
 class ServiceError(Exception):
@@ -54,10 +59,33 @@ class HistorySummary(NamedTuple):
     um método — a tela chegou a exibir ``<built-in method items of dict...>``
     no lugar do total. Uma tupla não tem esse método, então o acesso por ponto
     só pode significar o campo.
+
+    ``average_minutes`` é o tempo médio entre o pedido e a conclusão, ou
+    ``None`` quando não há pedido concluído no período.
     """
 
     orders: int
     items: int
+    average_minutes: int | None = None
+
+
+class HistoryFilters(TypedDict):
+    """Filtros do histórico, já convertidos a partir da query string."""
+
+    start: date | None
+    end: date | None
+    office_id: int | None
+
+
+class PlacedOrder(NamedTuple):
+    """Resultado do envio de um pedido.
+
+    ``created`` é falso quando o mesmo formulário já tinha gerado o pedido:
+    nesse caso ``order`` é o pedido original, e nada foi gravado de novo.
+    """
+
+    order: Order
+    created: bool
 
 
 # --------------------------------------------------------------------------- #
@@ -108,6 +136,15 @@ def active_catalog_by_office() -> list[tuple[Office, list[Space]]]:
         (office, [space for space in office.spaces if space.active])
         for office in active_offices()
     ]
+
+
+def require_orderable_space(space_id: int) -> Space:
+    """Sala ativa, de escritório ativo, pronta para receber pedido pelo link direto."""
+
+    space = db.session.get(Space, space_id)
+    if not space or not space.active or not space.office.active:
+        raise NotFoundError("Esta sala não está disponível para pedidos.")
+    return space
 
 
 def find_space(office_name: str, space_name: str) -> Space | None:
@@ -208,20 +245,107 @@ def collect_order_items(form) -> list[tuple[Product, int]]:
     return items
 
 
-def create_order(space: Space, requested_items: list[tuple[Product, int]]) -> Order:
-    order = Order(office=space.office, space=space, created_at=local_now())
+def new_request_token() -> str:
+    """Identificador de um formulário de pedido, para reconhecer reenvios."""
+
+    return secrets.token_urlsafe(24)
+
+
+def clean_request_token(raw_value: object) -> str | None:
+    """Token recebido do formulário, ou ``None`` se ausente ou malformado.
+
+    Um token estranho não recusa o pedido: só desliga a proteção contra
+    reenvio para aquele envio. Quem pede café não pode ficar sem pedir porque
+    um campo oculto chegou diferente.
+    """
+
+    token = str(raw_value or "").strip()
+    return token if REQUEST_TOKEN_PATTERN.fullmatch(token) else None
+
+
+def clean_note(raw_value: object) -> str | None:
+    """Observação do pedido em uma linha, sem espaços sobrando."""
+
+    note = " ".join(str(raw_value or "").split())
+    if not note:
+        return None
+    if len(note) > NOTE_MAX_LENGTH:
+        raise ServiceError(f"A observação pode ter até {NOTE_MAX_LENGTH} caracteres.")
+    return note
+
+
+def find_order_by_token(request_token: str | None) -> Order | None:
+    if not request_token:
+        return None
+    return db.session.scalars(
+        select(Order).filter_by(request_token=request_token)
+    ).first()
+
+
+def create_order(
+    space: Space,
+    requested_items: list[tuple[Product, int]],
+    note: str | None = None,
+    request_token: str | None = None,
+) -> PlacedOrder:
+    """Grava o pedido, a menos que o mesmo formulário já o tenha gravado.
+
+    Duplo clique, F5 na confirmação e reenvio por rede instável chegam com o
+    mesmo ``request_token``. Em vez de abrir outro pedido para a copa atender
+    duas vezes, devolve o original. Dois envios simultâneos que passem juntos
+    pela consulta esbarram no índice único, e o segundo também recebe o
+    original.
+    """
+
+    existing = find_order_by_token(request_token)
+    if existing:
+        return PlacedOrder(existing, created=False)
+
+    order = Order(
+        office=space.office,
+        space=space,
+        created_at=local_now(),
+        note=note,
+        request_token=request_token,
+    )
     for product, quantity in requested_items:
         order.items.append(OrderItem(product=product, quantity=quantity))
 
     db.session.add(order)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        existing = find_order_by_token(request_token)
+        if existing is None:
+            raise
+        return PlacedOrder(existing, created=False)
+
+    return PlacedOrder(order, created=True)
+
+
+def get_order(order_id: int) -> Order:
+    order = db.session.get(Order, order_id)
+    if not order:
+        raise NotFoundError("Pedido não encontrado.")
     return order
+
+
+# Carrega sala, escritório, itens e insumos junto com o pedido. Sem isso, cada
+# cartão do painel (consultado a cada poucos segundos) e cada linha do histórico
+# disparavam uma consulta por relação.
+ORDER_DETAILS = (
+    selectinload(Order.office),
+    selectinload(Order.space),
+    selectinload(Order.items).selectinload(OrderItem.product),
+)
 
 
 def pending_orders() -> list[Order]:
     return list(
         db.session.scalars(
             select(Order)
+            .options(*ORDER_DETAILS)
             .filter_by(status=STATUS_PENDING)
             .order_by(Order.created_at.asc())
         )
@@ -236,9 +360,7 @@ def complete_order(order_id: int) -> Order:
     um duplo clique apagaria o histórico real do atendimento.
     """
 
-    order = db.session.get(Order, order_id)
-    if not order:
-        raise NotFoundError("Pedido não encontrado.")
+    order = get_order(order_id)
 
     if order.status == STATUS_COMPLETED:
         raise ServiceError("Este pedido já foi concluído.", status_code=409)
@@ -258,6 +380,24 @@ def parse_date(raw_value: str | None) -> date | None:
         raise ServiceError("Use datas no formato AAAA-MM-DD.") from exc
 
 
+def _history_filters(
+    start: date | None, end: date | None, office_id: int | None
+) -> list:
+    """Filtros comuns à tela, aos totais e à exportação do histórico."""
+
+    if start and end and start > end:
+        raise ServiceError("A data inicial não pode ser posterior à data final.")
+
+    filters = [Order.status == STATUS_COMPLETED]
+    if start:
+        filters.append(Order.created_at >= datetime.combine(start, time.min))
+    if end:
+        filters.append(Order.created_at <= datetime.combine(end, time.max))
+    if office_id:
+        filters.append(Order.office_id == office_id)
+    return filters
+
+
 def completed_orders_page(
     start: date | None = None,
     end: date | None = None,
@@ -267,19 +407,12 @@ def completed_orders_page(
 ):
     """Histórico paginado de pedidos concluídos, do mais recente para o mais antigo."""
 
-    if start and end and start > end:
-        raise ServiceError("A data inicial não pode ser posterior à data final.")
-
-    query = select(Order).where(Order.status == STATUS_COMPLETED)
-
-    if start:
-        query = query.where(Order.created_at >= datetime.combine(start, time.min))
-    if end:
-        query = query.where(Order.created_at <= datetime.combine(end, time.max))
-    if office_id:
-        query = query.where(Order.office_id == office_id)
-
-    query = query.order_by(Order.completed_at.desc(), Order.id.desc())
+    query = (
+        select(Order)
+        .options(*ORDER_DETAILS)
+        .where(*_history_filters(start, end, office_id))
+        .order_by(Order.completed_at.desc(), Order.id.desc())
+    )
     return db.paginate(query, page=page, per_page=per_page, error_out=False)
 
 
@@ -290,13 +423,7 @@ def completed_orders_summary(
 ) -> HistorySummary:
     """Totais do período consultado, para o cabeçalho do histórico."""
 
-    filters = [Order.status == STATUS_COMPLETED]
-    if start:
-        filters.append(Order.created_at >= datetime.combine(start, time.min))
-    if end:
-        filters.append(Order.created_at <= datetime.combine(end, time.max))
-    if office_id:
-        filters.append(Order.office_id == office_id)
+    filters = _history_filters(start, end, office_id)
 
     total_orders = db.session.scalar(
         select(func.count(Order.id)).where(*filters)
@@ -309,7 +436,92 @@ def completed_orders_summary(
         .where(*filters)
     ) or 0
 
-    return HistorySummary(orders=total_orders, items=int(total_items))
+    # A diferença entre datas é escrita de um jeito em cada banco (julianday no
+    # SQLite, EXTRACT no PostgreSQL). Somar em Python mantém uma consulta só,
+    # e o volume de um portal de copa cabe com folga na memória.
+    durations = [
+        (completed_at - created_at).total_seconds()
+        for created_at, completed_at in db.session.execute(
+            select(Order.created_at, Order.completed_at).where(*filters)
+        )
+        if completed_at is not None
+    ]
+    average_minutes = (
+        round(sum(durations) / len(durations) / 60) if durations else None
+    )
+
+    return HistorySummary(
+        orders=total_orders, items=int(total_items), average_minutes=average_minutes
+    )
+
+
+HISTORY_EXPORT_HEADER = [
+    "Pedido",
+    "Escritório",
+    "Sala",
+    "Solicitado em",
+    "Concluído em",
+    "Espera (min)",
+    "Itens",
+    "Observação",
+]
+
+
+# Caracteres com que o Excel e o LibreOffice começam uma fórmula.
+FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def spreadsheet_safe(value: str) -> str:
+    """Impede que um texto vire fórmula ao abrir o CSV numa planilha.
+
+    A observação vem do formulário público: sem isto, quem pedisse café com a
+    observação ``=HYPERLINK(...)`` plantaria um link (ou coisa pior) na planilha
+    de quem administra o portal. O apóstrofo inicial faz a planilha tratar a
+    célula como texto.
+    """
+
+    return f"'{value}" if value.startswith(FORMULA_PREFIXES) else value
+
+
+def completed_orders_export(
+    start: date | None = None,
+    end: date | None = None,
+    office_id: int | None = None,
+) -> list[list[str]]:
+    """Linhas do histórico filtrado, na ordem de ``HISTORY_EXPORT_HEADER``.
+
+    Os textos passam por :func:`spreadsheet_safe`; números e datas, que o
+    próprio sistema escreve, não precisam.
+    """
+
+    orders = db.session.scalars(
+        select(Order)
+        .options(*ORDER_DETAILS)
+        .where(*_history_filters(start, end, office_id))
+        .order_by(Order.completed_at.desc(), Order.id.desc())
+    )
+
+    rows: list[list[str]] = []
+    for order in orders:
+        completed = order.completed_at
+        rows.append(
+            [
+                str(order.id),
+                spreadsheet_safe(order.office.name),
+                spreadsheet_safe(order.space.name),
+                order.created_at.strftime("%d/%m/%Y %H:%M"),
+                completed.strftime("%d/%m/%Y %H:%M") if completed else "",
+                str(round(order.waiting_seconds() / 60)) if completed else "",
+                spreadsheet_safe(
+                    "; ".join(
+                        f"{item.product.name}: {item.display_quantity()}"
+                        for item in order.items
+                    )
+                ),
+                spreadsheet_safe(order.note or ""),
+            ]
+        )
+    return rows
 
 
 def dashboard_stats() -> dict[str, int]:

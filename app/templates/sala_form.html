@@ -5,8 +5,8 @@
 {% block content %}
 <section class="panel panel-wide">
     <div class="page-heading">
-        <p class="eyebrow">Pedido para {{ office.name if office is defined else office_name }}</p>
-        <h1>{{ room.name if room is defined else room_name }}</h1>
+        <p class="eyebrow">Pedido para {{ office.name }}</p>
+        <h1>{{ room.name }}</h1>
     </div>
 
     {% if error %}
@@ -15,36 +15,59 @@
 
     <form action="{{ url_for('main.submit_form') }}" method="POST" class="form-plain" data-order-form>
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <input type="hidden" name="office" value="{{ office.name if office is defined else office_name }}">
-        <input type="hidden" name="room" value="{{ room.name if room is defined else room_name }}">
+        <input type="hidden" name="office" value="{{ office.name }}">
+        <input type="hidden" name="room" value="{{ room.name }}">
+        {#
+          Identifica este formulário. Se ele chegar duas vezes (duplo clique,
+          rede instável), o servidor devolve o pedido já criado em vez de abrir
+          outro para a copa.
+        #}
+        <input type="hidden" name="request_token" value="{{ request_token }}" data-request-token>
 
         <div class="order-grid">
             {% for product in products %}
+            {% set current = values.get(product.form_key, "") %}
             <div class="order-row">
                 <label for="{{ product.form_key }}">{{ product.name }}</label>
                 {% if product.input_type == "boolean" %}
                 <select id="{{ product.form_key }}" name="{{ product.form_key }}" class="form-control compact-control">
                     <option value="Não">Não</option>
-                    <option value="Sim">Sim</option>
+                    <option value="Sim" {% if current == "Sim" %}selected{% endif %}>Sim</option>
                 </select>
                 {% else %}
+                {# Com JavaScript, ganha botões de − e +; sem ele, é um campo numérico comum. #}
                 <input
                     type="number"
                     id="{{ product.form_key }}"
                     name="{{ product.form_key }}"
                     min="0"
                     max="1000"
-                    value="0"
+                    step="1"
+                    inputmode="numeric"
+                    value="{{ current or 0 }}"
                     class="form-control compact-control"
+                    data-quantity
                 >
                 {% endif %}
             </div>
             {% endfor %}
         </div>
 
+        <label for="note">Observação <span class="label-hint">(opcional)</span></label>
+        <textarea
+            id="note"
+            name="note"
+            class="form-control"
+            rows="2"
+            maxlength="{{ note_max_length }}"
+            placeholder="Ex.: adoçante à parte, reunião para 12 pessoas"
+        >{{ values.get("note", "") }}</textarea>
+
+        <p class="order-summary" data-order-summary aria-live="polite"></p>
+
         <div class="actions">
             <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Voltar</a>
-            <button type="submit" class="btn btn-primary">Enviar pedido</button>
+            <button type="submit" class="btn btn-primary" data-submit-order>Enviar pedido</button>
         </div>
     </form>
 </section>

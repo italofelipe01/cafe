@@ -10,14 +10,20 @@
             <p class="eyebrow">Administração</p>
             <h1>Histórico de pedidos</h1>
         </div>
-        <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-secondary btn-compact">Voltar</a>
+        <div class="header-actions">
+            {% if pagination %}
+            {# `download` também evita a transição de saída: o arquivo baixa e a página fica. #}
+            <a href="{{ url_for('main.admin_history_export', **filters) }}" class="btn btn-primary btn-compact" download>Exportar CSV</a>
+            {% endif %}
+            <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-secondary btn-compact">Voltar</a>
+        </div>
     </div>
 
     {% if error %}
     <div class="alert alert-error" role="alert">{{ error }}</div>
     {% endif %}
 
-    <form method="GET" action="{{ url_for('main.admin_history') }}" class="admin-filters" data-no-transition="true">
+    <form method="GET" action="{{ url_for('main.admin_history') }}" class="admin-filters history-filters" data-no-transition="true">
         <div>
             <label for="history-start">De</label>
             <input id="history-start" name="start" type="date" class="form-control" value="{{ filters.start }}">
@@ -50,6 +56,10 @@
             <strong>{{ summary.items }}</strong>
             <span>Itens atendidos</span>
         </div>
+        <div>
+            <strong>{{ "%d min"|format(summary.average_minutes) if summary.average_minutes is not none else "--" }}</strong>
+            <span>Tempo médio de atendimento</span>
+        </div>
     </div>
 
     <div class="table-wrapper">
@@ -80,6 +90,9 @@
                             <li><span>{{ item.product.name }}</span><strong>{{ item.display_quantity() }}</strong></li>
                             {% endfor %}
                         </ul>
+                        {% if order.note %}
+                        <p class="cell-note">{{ order.note }}</p>
+                        {% endif %}
                     </td>
                 </tr>
                 {% else %}

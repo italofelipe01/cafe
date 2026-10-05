@@ -10,7 +10,10 @@
             <p class="eyebrow">Administração</p>
             <h1>Salas</h1>
         </div>
-        <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-secondary btn-compact">Voltar</a>
+        <div class="header-actions">
+            <a href="{{ url_for('main.admin_space_qrcodes') }}" class="btn btn-primary btn-compact">QR codes das salas</a>
+            <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-secondary btn-compact">Voltar</a>
+        </div>
     </div>
 
     <form method="POST" action="{{ url_for('main.admin_spaces') }}" class="admin-create-form">
@@ -87,12 +90,18 @@
                         </span>
                     </td>
                     <td data-label="Ações">
-                        <form method="POST" action="{{ url_for('main.admin_toggle_space', space_id=space.id) }}">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-secondary btn-compact" {% if not space.office.active and not space.active %}title="Reative o escritório antes de ativar a sala"{% endif %}>
-                                {{ 'Desativar' if space.active else 'Ativar' }}
-                            </button>
-                        </form>
+                        <div class="row-actions">
+                            {% if space.active and space.office.active %}
+                            {# Endereço direto do pedido desta sala: vira favorito no tablet ou QR code na porta. #}
+                            <a href="{{ url_for('main.room_order', space_id=space.id) }}" class="btn btn-ghost btn-compact" target="_blank" rel="noopener">Abrir pedido</a>
+                            {% endif %}
+                            <form method="POST" action="{{ url_for('main.admin_toggle_space', space_id=space.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-secondary btn-compact" {% if not space.office.active and not space.active %}title="Reative o escritório antes de ativar a sala"{% endif %}>
+                                    {{ 'Desativar' if space.active else 'Ativar' }}
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 {% else %}

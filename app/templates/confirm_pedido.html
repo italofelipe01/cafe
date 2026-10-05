@@ -6,7 +6,7 @@
 <section class="panel panel-narrow">
     <div class="success-banner">
         <p class="eyebrow">Pedido #{{ order.id }}</p>
-        <h1>Pedido solicitado com sucesso</h1>
+        <h1>{{ "Pedido concluído pela copa" if order.status == "completed" else "Pedido solicitado com sucesso" }}</h1>
     </div>
 
     <div class="summary-meta">
@@ -16,7 +16,7 @@
     </div>
 
     <ul class="summary-list">
-        {% for item in requested_items %}
+        {% for item in order.items %}
         <li>
             <span>{{ item.product.name }}</span>
             <strong>{{ item.display_quantity() }}</strong>
@@ -24,8 +24,13 @@
         {% endfor %}
     </ul>
 
-    <div class="actions single-action">
-        <a href="{{ url_for('main.index') }}" class="btn btn-primary">Novo pedido</a>
+    {% if order.note %}
+    <p class="order-note"><strong>Observação:</strong> {{ order.note }}</p>
+    {% endif %}
+
+    <div class="actions">
+        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Outra sala</a>
+        <a href="{{ url_for('main.room_order', space_id=order.space_id) }}" class="btn btn-primary">Novo pedido nesta sala</a>
     </div>
 </section>
 {% endblock %}

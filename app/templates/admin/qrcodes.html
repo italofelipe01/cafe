@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}QR codes das salas | Copa Pronta{% endblock %}
+{% block main_class %}admin-shell{% endblock %}
+
+{% block content %}
+<section class="panel panel-wide qr-sheet">
+    <div class="admin-header no-print">
+        <div>
+            <p class="eyebrow">Administração</p>
+            <h1>QR codes das salas</h1>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-primary btn-compact" data-print>Imprimir</button>
+            <a href="{{ url_for('main.admin_spaces') }}" class="btn btn-secondary btn-compact">Voltar</a>
+        </div>
+    </div>
+
+    <div class="no-print">
+        {% if loopback %}
+        <div class="alert alert-error" role="alert">
+            Estes códigos apontam para <strong>{{ base_url }}</strong>, que só abre nesta máquina.
+            Abra esta página pelo endereço da rede, ou defina <code>PUBLIC_BASE_URL</code> no ambiente.
+        </div>
+        {% else %}
+        <p class="form-note">
+            Cada código abre o pedido direto na sala, sem escolher escritório.
+            Endereço usado: <strong>{{ base_url }}</strong>{% if not configured %} (o desta página; para fixar outro, defina <code>PUBLIC_BASE_URL</code>){% endif %}.
+        </p>
+        {% endif %}
+    </div>
+
+    {% for office, rooms in cards %}
+    <h2 class="qr-office">{{ office.name }}</h2>
+    <div class="qr-grid">
+        {% for space, url, svg in rooms %}
+        <figure class="qr-card">
+            {{ svg }}
+            <figcaption>
+                <strong>{{ space.name }}</strong>
+                <span>Aponte a câmera para pedir café, água ou limpeza.</span>
+                <small>{{ url }}</small>
+            </figcaption>
+        </figure>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-message">Nenhuma sala ativa para gerar código.</p>
+    {% endfor %}
+</section>
+{% endblock %}

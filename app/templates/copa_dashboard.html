@@ -4,27 +4,51 @@
 {% block main_class %}dashboard-shell{% endblock %}
 
 {% block content %}
-<header class="dashboard-header">
-    <div>
-        <p class="eyebrow">Operação da copa</p>
-        <h1>Pedidos pendentes</h1>
-    </div>
-</header>
+{#
+  Os endereços vêm do servidor, e não escritos no script: atrás de um proxy que
+  publique o portal num subcaminho (/copa-pronta/...), url_for já os resolve.
+#}
+<div
+    class="dashboard"
+    data-copa-dashboard
+    data-orders-url="{{ url_for('main.get_orders') }}"
+    data-complete-url="{{ url_for('main.complete_order', order_id=0).rsplit('/', 1)[0] }}"
+    data-login-url="{{ url_for('main.login') }}"
+    data-warn-minutes="{{ warn_minutes }}"
+    data-late-minutes="{{ late_minutes }}"
+>
+    <header class="dashboard-header">
+        <div>
+            <p class="eyebrow">Operação da copa</p>
+            <h1>Pedidos pendentes</h1>
+        </div>
+        <div class="dashboard-tools">
+            <button type="button" class="btn btn-secondary btn-compact" data-alerts-toggle aria-pressed="false">
+                Ativar alertas
+            </button>
+            <p class="dashboard-status" data-dashboard-status aria-live="polite">Conectando...</p>
+        </div>
+    </header>
 
-<section class="dashboard-stats" aria-label="Resumo dos pedidos">
-    <div>
-        <span id="pending-count">0</span>
-        <small>Pendentes</small>
-    </div>
-    <div>
-        <span id="oldest-order">--</span>
-        <small>Mais antigo</small>
-    </div>
-</section>
+    <section class="dashboard-stats" aria-label="Resumo dos pedidos">
+        <div>
+            <span id="pending-count">0</span>
+            <small>Pendentes</small>
+        </div>
+        <div>
+            <span id="oldest-order">--</span>
+            <small>Maior espera</small>
+        </div>
+        <div>
+            <span id="late-count">0</span>
+            <small>Acima de {{ late_minutes }} min</small>
+        </div>
+    </section>
 
-<div id="dashboard-error" class="alert alert-error hidden" role="alert"></div>
-<div id="orders-container" class="orders-container">
-    <p class="empty-message">Carregando pedidos...</p>
+    <div id="dashboard-error" class="alert alert-error hidden" role="alert"></div>
+    <div id="orders-container" class="orders-container">
+        <p class="empty-message">Carregando pedidos...</p>
+    </div>
 </div>
 
 <div id="complete-modal" class="modal-backdrop hidden" role="presentation">

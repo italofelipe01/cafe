@@ -28,6 +28,8 @@ BR_TZ = ZoneInfo("America/Sao_Paulo")
 STATUS_PENDING = "pending"
 STATUS_COMPLETED = "completed"
 
+NOTE_MAX_LENGTH = 280
+
 
 def local_now() -> datetime:
     """Horário de Brasília, sem tzinfo.
@@ -115,6 +117,14 @@ class Order(ModelBase):
     )
     created_at: Mapped[datetime] = mapped_column(default=local_now, index=True)
     completed_at: Mapped[datetime | None] = mapped_column(default=None, index=True)
+    # Recado livre de quem pediu ("adoçante à parte", "para 12 pessoas").
+    note: Mapped[str | None] = mapped_column(db.String(NOTE_MAX_LENGTH), default=None)
+    # Identificador do formulário que gerou o pedido. Um reenvio do mesmo
+    # formulário (duplo clique, F5, rede instável) encontra o pedido já criado
+    # em vez de abrir outro. Pedidos anteriores a esta coluna ficam com nulo.
+    request_token: Mapped[str | None] = mapped_column(
+        db.String(64), default=None, unique=True, index=True
+    )
 
     office: Mapped[Office] = relationship()
     space: Mapped[Space] = relationship()
@@ -131,6 +141,17 @@ class Order(ModelBase):
         db.Index("ix_order_status_created_at", "status", "created_at"),
     )
 
+    def waiting_seconds(self, now: datetime | None = None) -> int:
+        """Tempo de espera até ``now`` (ou até a conclusão, se já concluído).
+
+        Calculado no servidor, e não no navegador, porque ``created_at`` está
+        no horário de Brasília sem fuso: o relógio de um tablet em outro fuso,
+        ou só atrasado, mostraria uma espera errada.
+        """
+
+        end = self.completed_at or now or local_now()
+        return max(0, int((end - self.created_at).total_seconds()))
+
     def to_dict(self) -> dict[str, object]:
         """Representação usada pelo painel da copa."""
 
@@ -142,6 +163,8 @@ class Order(ModelBase):
             "date": self.created_at.strftime("%d/%m/%Y"),
             "time": self.created_at.strftime("%H:%M"),
             "created_at": self.created_at.isoformat(),
+            "waiting_seconds": self.waiting_seconds(),
+            "note": self.note or "",
             "items": {item.product.name: item.display_quantity() for item in self.items},
         }
 

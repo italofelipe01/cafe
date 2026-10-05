@@ -8,3 +8,5 @@ SQLAlchemy
 waitress
 python-dotenv
 tzdata
+# QR codes das salas, em SVG. Python puro, sem dependência nativa: roda offline.
+segno
