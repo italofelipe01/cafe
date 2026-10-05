@@ -20,7 +20,9 @@ python -m unittest discover -s . -p "test_*.py"
 ```
 
 Todos precisam passar. O workflow `Quality Gate` roda exatamente isso, com os testes em
-Python 3.11, 3.12 e 3.13, e ainda aplica as migrations num banco limpo.
+Python 3.11, 3.12 e 3.13, aplica as migrations num banco limpo e constrói a imagem Docker,
+subindo o contêiner até o `/health` responder. Se mexer em `Dockerfile`, dependências ou
+`run.py`, rode `docker build -t copa-pronta .` antes.
 
 ## Convenções
 
@@ -50,7 +52,8 @@ elementos full-bleed derivam a margem negativa dele em vez de repetir o número.
 
 **JavaScript** não tem etapa de build nem dependência externa. Cada bloco de
 `script.js` começa com uma checagem de existência do elemento âncora, porque o
-mesmo arquivo serve a todas as telas.
+mesmo arquivo serve a todas as telas. Endereços de API chegam por `data-*`
+preenchido com `url_for` no template, nunca escritos no script.
 
 **Templates** herdam de `base.html`. Todo formulário POST precisa do campo
 `csrf_token`; há um teste que falha se algum ficar sem.
@@ -61,7 +64,9 @@ Depois de alterar `app/models.py`:
 
 ```powershell
 $env:FLASK_APP="app:create_app"
-$env:DATABASE_URL="sqlite:///instance/dev.db"
+$env:DATABASE_URL="sqlite:///dev.db"   # relativo a instance/: grava instance/dev.db
+$env:AUTO_CREATE_DB="False"
+flask db upgrade
 flask db migrate -m "descricao da mudanca"
 flask db upgrade
 ```
