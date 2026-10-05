@@ -9,6 +9,33 @@ foi escrita à mão e fica no fim.
 
 <!-- versoes -->
 
+## v1.2.0 (2026-10-05)
+
+### Continuous Integration
+
+- Bump python-semantic-release/python-semantic-release
+  ([`9b9ff01`](https://github.com/italofelipe01/cafe/commit/9b9ff01be1598085d6db5fb25279ea35e6204bc7))
+
+- Ler o log do conteiner pelo stderr na verificacao da imagem
+  ([`06def93`](https://github.com/italofelipe01/cafe/commit/06def931d3131d1c43d8e48c7a72aac60c90907b))
+
+### Documentation
+
+- Guia de implantacao e documentacao alinhada ao fluxo automatico
+  ([`894105b`](https://github.com/italofelipe01/cafe/commit/894105b96d331faf6bcbfb236e9a2ebc3a6641e1))
+
+### Features
+
+- **copa**: Pedido sem duplicidade, QR code por sala e painel com alertas
+  ([`ab28c22`](https://github.com/italofelipe01/cafe/commit/ab28c2242f594870d13ab57ae11742fe4d1ba9a8))
+
+- **server**: Imagem Docker para a nuvem, verificada no gate
+  ([`8aeb763`](https://github.com/italofelipe01/cafe/commit/8aeb7630a050b8b542828b875c3cb62d854a4164))
+
+- **server**: Subir sem passo manual, com migrations automaticas e --setup
+  ([`bd67822`](https://github.com/italofelipe01/cafe/commit/bd67822d4d376306f48627fd32c39e5efc7c9a01))
+
+
 ## v1.1.0 (2026-09-18)
 
 
