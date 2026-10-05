@@ -10,17 +10,18 @@ config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-fileConfig(config.config_file_name)
+#
+# disable_existing_loggers=False: o run.py aplica as migrations dentro do
+# processo do servidor (AUTO_MIGRATE). Com o padrão True, o fileConfig
+# desligaria o log da aplicação e a trilha de auditoria pelo resto da execução.
+fileConfig(config.config_file_name, disable_existing_loggers=False)
 logger = logging.getLogger('alembic.env')
 
 
 def get_engine():
-    try:
-        # this works with Flask-SQLAlchemy<3 and Alchemical
-        return current_app.extensions['migrate'].db.get_engine()
-    except (TypeError, AttributeError):
-        # this works with Flask-SQLAlchemy>=3
-        return current_app.extensions['migrate'].db.engine
+    # O projeto usa Flask-SQLAlchemy 3, que expõe `engine`. O `get_engine()`
+    # que o scaffold tentava primeiro está depreciado e só gerava aviso.
+    return current_app.extensions['migrate'].db.engine
 
 
 def get_engine_url():

@@ -1,6 +1,6 @@
 /*
  * Comportamentos globais: tema, transições de página, filtro de salas,
- * filtros do admin e reordenação de insumos.
+ * quantidades do pedido, filtros do admin e reordenação de insumos.
  *
  * Convenção: cada bloco é isolado por uma checagem de existência do elemento
  * âncora, para que o mesmo arquivo sirva a todas as telas.
@@ -10,6 +10,16 @@
 function csrfToken() {
     const meta = document.querySelector('meta[name="csrf-token"]');
     return meta ? meta.content : '';
+}
+
+/** Identificador aleatório em base64url, no formato que o servidor aceita. */
+function randomToken() {
+    const bytes = new Uint8Array(24);
+    window.crypto.getRandomValues(bytes);
+    return btoa(String.fromCharCode(...bytes))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
 }
 
 /** POST em JSON já com o cabeçalho de CSRF. */
@@ -58,8 +68,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     startPageEnter();
 
-    window.addEventListener('pageshow', () => {
+    window.addEventListener('pageshow', event => {
         document.body.classList.remove('page-exit');
+
+        // Voltar pelo histórico restaura a página como ficou, inclusive com o
+        // formulário travado pelo envio anterior. Destrava, e dá ao pedido um
+        // identificador novo: daqui sai outro pedido, não o reenvio do mesmo.
+        if (!event.persisted) return;
+        document.querySelectorAll('form[data-transitioning]').forEach(form => {
+            delete form.dataset.transitioning;
+            form.querySelectorAll('[data-submitting]').forEach(button => {
+                button.disabled = false;
+                delete button.dataset.submitting;
+            });
+        });
+        document.querySelectorAll('[data-request-token]').forEach(input => {
+            input.value = randomToken();
+        });
     });
 
     /* ------------------------------------------------------------------ */
@@ -106,7 +131,37 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         officeSelect.addEventListener('change', applyRoomFilter);
-        applyRoomFilter();
+
+        // Tablet fixo numa sala: a escolha anterior já vem selecionada.
+        const LAST_ROOM_KEY = 'lastRoom';
+        try {
+            const saved = JSON.parse(localStorage.getItem(LAST_ROOM_KEY) || 'null');
+            if (saved && !officeSelect.value
+                && Array.from(officeSelect.options).some(option => option.value === saved.office)) {
+                officeSelect.value = saved.office;
+            }
+            applyRoomFilter();
+            const roomOption = saved && Array.from(roomSelect.options).find(option => (
+                option.value === saved.room && option.dataset.office === saved.office && !option.disabled
+            ));
+            if (roomOption && !roomSelect.value) roomSelect.value = roomOption.value;
+        } catch (error) {
+            applyRoomFilter();
+        }
+
+        const officeForm = officeSelect.form;
+        if (officeForm) {
+            officeForm.addEventListener('submit', () => {
+                try {
+                    localStorage.setItem(LAST_ROOM_KEY, JSON.stringify({
+                        office: officeSelect.value,
+                        room: roomSelect.value
+                    }));
+                } catch (error) {
+                    /* Sem armazenamento: só não lembra a sala. */
+                }
+            });
+        }
     }
 
     /* ------------------------------------------------------------------ */
@@ -119,6 +174,67 @@ document.addEventListener('DOMContentLoaded', function () {
         feedback.className = 'alert alert-error hidden';
         feedback.setAttribute('role', 'alert');
         orderForm.prepend(feedback);
+
+        const summary = orderForm.querySelector('[data-order-summary]');
+
+        function selectedCount() {
+            let total = 0;
+            orderForm.querySelectorAll('input[data-quantity]').forEach(input => {
+                const value = parseInt(input.value, 10);
+                const chosen = value > 0;
+                input.closest('.order-row').classList.toggle('is-selected', chosen);
+                if (chosen) total += value;
+            });
+            orderForm.querySelectorAll('select').forEach(select => {
+                const chosen = select.value === 'Sim';
+                select.closest('.order-row').classList.toggle('is-selected', chosen);
+                if (chosen) total += 1;
+            });
+            return total;
+        }
+
+        function updateSummary() {
+            const total = selectedCount();
+            if (!summary) return;
+            summary.textContent = total === 0
+                ? 'Nenhum item selecionado ainda.'
+                : `${total} ${total === 1 ? 'item selecionado' : 'itens selecionados'}.`;
+        }
+
+        // Botões de − e + em volta de cada quantidade: num celular, digitar
+        // num campo que já mostra 0 era o passo mais lento do pedido.
+        orderForm.querySelectorAll('input[data-quantity]').forEach(input => {
+            const label = orderForm.querySelector(`label[for="${input.id}"]`);
+            const name = label ? label.textContent.trim() : 'item';
+            const max = parseInt(input.max, 10) || 1000;
+
+            const stepper = document.createElement('div');
+            stepper.className = 'stepper';
+
+            function makeButton(text, delta, action) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'stepper-button';
+                button.textContent = text;
+                button.setAttribute('aria-label', `${action} ${name}`);
+                button.addEventListener('click', () => {
+                    const current = parseInt(input.value, 10) || 0;
+                    input.value = Math.min(max, Math.max(0, current + delta));
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                });
+                return button;
+            }
+
+            input.parentNode.insertBefore(stepper, input);
+            stepper.append(makeButton('−', -1, 'Diminuir'), input, makeButton('+', 1, 'Aumentar'));
+
+            // Foco no campo seleciona o número: digitar substitui o 0.
+            input.addEventListener('focus', () => input.select());
+        });
+
+        orderForm.addEventListener('input', updateSummary);
+        orderForm.addEventListener('change', updateSummary);
+        updateSummary();
 
         orderForm.addEventListener('submit', function (event) {
             const quantities = Array.from(orderForm.querySelectorAll('input[type="number"]'));
@@ -404,6 +520,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /* ------------------------------------------------------------------ */
+    /* Impressão (QR codes das salas)                                      */
+    /* ------------------------------------------------------------------ */
+
+    document.querySelectorAll('[data-print]').forEach(button => {
+        button.addEventListener('click', () => window.print());
+    });
+
+    /* ------------------------------------------------------------------ */
     /* Transição em links e formulários                                    */
     /* ------------------------------------------------------------------ */
 
@@ -426,7 +550,14 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('submit', event => {
         const submittedForm = event.target;
         if (!(submittedForm instanceof HTMLFormElement) || event.defaultPrevented) return;
-        if (submittedForm.dataset.noTransition === 'true' || submittedForm.dataset.transitioning === 'true') return;
+        if (submittedForm.dataset.noTransition === 'true') return;
+
+        // Um segundo clique durante o envio não pode virar um segundo pedido:
+        // o formulário já está a caminho do servidor.
+        if (submittedForm.dataset.transitioning === 'true') {
+            event.preventDefault();
+            return;
+        }
 
         event.preventDefault();
         submittedForm.dataset.transitioning = 'true';
@@ -442,6 +573,11 @@ document.addEventListener('DOMContentLoaded', function () {
             carried.name = submitter.name;
             carried.value = submitter.value;
             submittedForm.appendChild(carried);
+        }
+
+        if (submitter && submitter.matches('button, input[type="submit"]')) {
+            submitter.dataset.submitting = 'true';
+            submitter.disabled = true;
         }
 
         startPageExit(() => {

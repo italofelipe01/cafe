@@ -12,7 +12,8 @@ from app.security import safe_redirect_target
 from tests.base import ADMIN_PASSWORD, COPA_PASSWORD, AppTestCase
 
 PROTECTED_GET_ROUTES = ["/copa", "/admin", "/admin/offices", "/admin/spaces",
-                        "/admin/products", "/admin/history"]
+                        "/admin/products", "/admin/history", "/admin/history.csv",
+                        "/admin/spaces/qrcodes"]
 
 PROTECTED_POST_ROUTES = [
     "/admin/offices",
@@ -32,7 +33,7 @@ class TestAuthentication(AppTestCase):
             with self.subTest(path=path):
                 self.assertEqual(self.client.get(path).status_code, 200)
 
-        self.assertEqual(self.submit_order(copo="1").status_code, 200)
+        self.assertEqual(self.submit_order(copo="1").status_code, 302)
 
     def test_rotas_internas_exigem_login(self):
         for path in PROTECTED_GET_ROUTES:
@@ -203,7 +204,7 @@ class TestRateLimiting(AppTestCase):
 
         codigos = [self.submit_order(copo="1").status_code for _ in range(5)]
 
-        self.assertEqual(codigos[:3], [200, 200, 200])
+        self.assertEqual(codigos[:3], [302, 302, 302])
         self.assertIn(429, codigos)
 
     def test_limita_tentativas_de_login(self):

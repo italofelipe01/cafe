@@ -124,6 +124,14 @@ def seed_database() -> dict[str, int]:
     return created
 
 
+def catalog_is_empty() -> bool:
+    """Verdadeiro na primeira subida: nenhum escritório e nenhum insumo."""
+
+    has_office = db.session.scalars(select(Office.id).limit(1)).first() is not None
+    has_product = db.session.scalars(select(Product.id).limit(1)).first() is not None
+    return not (has_office or has_product)
+
+
 def _next_sort_order() -> int:
     from sqlalchemy import func
 

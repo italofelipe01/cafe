@@ -78,7 +78,7 @@ class TestOrderServices(AppTestCase):
         with self.app.app_context():
             space = services.require_space("Sede Centro", "Sala Bourbon")
             produto = Product.query.filter_by(form_key="copo").one()
-            order = services.create_order(space, [(produto, 4)])
+            order = services.create_order(space, [(produto, 4)]).order
 
             self.assertEqual(order.status, "pending")
             self.assertEqual(order.items[0].quantity, 4)
@@ -92,7 +92,7 @@ class TestOrderServices(AppTestCase):
         with self.app.app_context():
             space = services.require_space("Sede Centro", "Sala Bourbon")
             produto = Product.query.filter_by(form_key="copo").one()
-            order = services.create_order(space, [(produto, 1)])
+            order = services.create_order(space, [(produto, 1)]).order
 
             concluido = services.complete_order(order.id)
             self.assertEqual(concluido.status, "completed")

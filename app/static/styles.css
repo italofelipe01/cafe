@@ -14,8 +14,18 @@
     --color-accent-text: #A34A1F;
     --color-danger: #B3261E;
     --color-danger-text: #B3261E;
-    --color-success: #27ae60; /* Success Green */
+    /* Verde escuro o bastante para texto branco (5,3:1). O #27ae60 anterior
+       ficava em 2,9:1 e reprovava no WCAG até para texto grande. */
+    --color-success: #1E7A46;
+    --color-success-hover: #186239;
+    --color-success-text: #1E7A46;
+    --color-warning-text: #8A5A00;
     --color-on-fill: #FFFFFF; /* texto sobre primary, accent, danger e success */
+    --color-on-fill-muted: rgba(255, 255, 255, 0.82);
+
+    /* QR code: escuro sobre claro nos dois temas, senão a câmera não lê. */
+    --color-qr-dark: #000000;
+    --color-qr-light: #FFFFFF;
 
     /* Theme Colors - Light Mode (Default) */
     --color-bg-body: #FAF6F1;
@@ -60,6 +70,8 @@
         --color-primary-hover: #85532F;
         --color-accent-text: #E39A6B;
         --color-danger-text: #F2A7A1;
+        --color-success-text: #6FCF97;
+        --color-warning-text: #F2C46B;
 
         --color-bg-body: #1C1714;
         --color-bg-card: #28201B;
@@ -85,6 +97,8 @@
     --color-primary-hover: #3A2216;
     --color-accent-text: #A34A1F;
     --color-danger-text: #B3261E;
+    --color-success-text: #1E7A46;
+    --color-warning-text: #8A5A00;
 
     --color-bg-body: #FAF6F1;
     --color-bg-card: #FFFFFF;
@@ -109,6 +123,8 @@
     --color-primary-hover: #85532F;
     --color-accent-text: #E39A6B;
     --color-danger-text: #F2A7A1;
+    --color-success-text: #6FCF97;
+    --color-warning-text: #F2C46B;
 
     --color-bg-body: #1C1714;
     --color-bg-card: #28201B;
@@ -127,13 +143,14 @@
     --color-nav-hover: rgba(241, 230, 216, 0.1);
 }
 
-/* Theme Toggle Button */
+/* Botão de tema: terceira coluna do cabeçalho. Era fixo no canto da tela e,
+   ao rolar, passava por cima do conteúdo e dos botões dos painéis. */
 .btn-theme-toggle {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
+    justify-self: end;
+    width: 46px;
+    height: 46px;
+    min-height: 0;
+    padding: 0;
     border-radius: 50%;
     background-color: var(--color-accent);
     color: var(--color-on-fill);
@@ -143,7 +160,6 @@
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    z-index: 1000;
     transition: background-color 0.3s ease, transform 0.2s;
     margin: 0; /* Reset global btn margin */
 }
@@ -154,7 +170,7 @@
 }
 
 .btn-theme-toggle .icon {
-    font-size: 1.5em;
+    font-size: 1.35em;
     line-height: 1;
 }
 
@@ -261,13 +277,7 @@ a {
     text-decoration: none;
 }
 
-/* Layout & Containers */
-.container {
-    width: 100%;
-    max-width: 800px;
-    margin: 0 auto;
-}
-
+/* Layout */
 .site-header {
     align-items: center;
     box-sizing: border-box;
@@ -328,33 +338,6 @@ a {
     font-weight: inherit;
 }
 
-/* Card Component */
-.card {
-    background-color: var(--color-bg-card);
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px var(--color-shadow);
-    border: 1px solid var(--color-border);
-    margin-bottom: 20px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.success-box {
-    background-color: var(--color-primary);
-    color: var(--color-on-fill);
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.success-box h1 {
-    color: var(--color-on-fill);
-    margin: 0;
-    font-size: 1.5em;
-}
-
 .summary-list {
     list-style: none;
     padding: 0;
@@ -373,15 +356,11 @@ a {
     border-bottom: none;
 }
 
-/* Form Styles */
+/* Formulários não têm visual próprio: o cartão é o `.panel` em volta. Um
+   estilo de cartão aqui virava cartão dentro de cartão em todo formulário que
+   esquecia de anulá-lo — os de edição de insumo e o filtro do histórico. */
 form {
-    background-color: var(--color-bg-card);
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px var(--color-shadow);
-    width: 90%;
-    max-width: 600px;
-    margin: 0 auto;
+    margin: 0;
 }
 
 label {
@@ -396,7 +375,8 @@ label {
 .form-control,
 input[type="text"],
 input[type="number"],
-select {
+select,
+textarea {
     width: 100%;
     padding: 10px;
     margin-top: 5px;
@@ -423,6 +403,9 @@ button {
     font-family: var(--font-sans);
     font-size: 1rem;
     font-weight: 700;
+    /* Fixa a altura da linha: `<a class="btn">` herdava a do corpo e `<button>`
+       usava a do navegador, e os dois saíam desalinhados lado a lado. */
+    line-height: 1.25;
     text-align: center;
     transition: background-color 0.3s ease;
     width: 100%; /* Default to full width for submit buttons based on old styles */
@@ -542,6 +525,16 @@ th {
         text-align: left;
     }
 
+    /* A observação vai para a linha de baixo, na largura toda. */
+    table td:has(.cell-note) {
+        flex-wrap: wrap;
+    }
+
+    table td .cell-note {
+        flex-basis: 100%;
+        text-align: left;
+    }
+
     table td:last-child {
         border-bottom: 0;
     }
@@ -625,16 +618,6 @@ th {
 
 .order-items li span {
     min-width: 0;
-}
-
-.btn-concluir {
-    background-color: var(--color-success); /* Use variable */
-    color: var(--color-on-fill);
-    width: 100%;
-}
-
-.btn-concluir:hover {
-    background-color: #2ecc71;
 }
 
 .empty-message {
@@ -730,9 +713,15 @@ th {
 }
 
 .alert-success {
-    background: rgba(39, 174, 96, 0.12);
-    border: 1px solid rgba(39, 174, 96, 0.38);
-    color: var(--color-success);
+    background: color-mix(in srgb, var(--color-success-text) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-success-text) 35%, transparent);
+    color: var(--color-success-text);
+}
+
+.alert-info {
+    background: color-mix(in srgb, var(--color-accent-text) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-accent-text) 35%, transparent);
+    color: var(--color-text-main);
 }
 
 .hidden {
@@ -826,6 +815,9 @@ th {
 }
 
 .btn-compact {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
     margin: 0;
     width: auto;
 }
@@ -833,7 +825,7 @@ th {
 .dashboard-stats {
     display: grid;
     gap: 14px;
-    grid-template-columns: repeat(2, minmax(140px, 1fr));
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
     margin-bottom: 20px;
     width: 100%;
 }
@@ -867,12 +859,12 @@ th {
 }
 
 .btn-success:hover {
-    background-color: #219653;
+    background-color: var(--color-success-hover);
 }
 
 .btn-success:disabled {
-    background-color: #8fc9a8;
     cursor: wait;
+    opacity: 0.6;
 }
 
 .modal-backdrop {
@@ -897,7 +889,7 @@ th {
     background-color: var(--color-bg-card);
     border: 1px solid var(--color-border);
     border-radius: 8px;
-    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+    box-shadow: 0 18px 40px var(--color-shadow);
     box-sizing: border-box;
     max-width: 460px;
     padding: 26px;
@@ -943,6 +935,10 @@ th {
 
 .top-nav a,
 .top-nav .btn-link {
+    /* O `button` global ocupa a largura toda e ganha margem: aqui ele precisa
+       ser só mais um item da navegação, senão o "Sair" quebra a linha. */
+    min-height: 0;
+    width: auto;
     border-radius: 999px;
     color: var(--color-text-main);
     font-weight: 700;
@@ -1130,7 +1126,9 @@ th {
     cursor: grabbing;
 }
 
-.product-edit-form {
+/* Duas classes de propósito: `.inline-edit-form`, declarada depois, venceria
+   com duas colunas e jogaria o "Salvar" para baixo do nome. */
+.inline-edit-form.product-edit-form {
     grid-template-columns: minmax(180px, 1fr) minmax(140px, 180px) auto;
 }
 
@@ -1187,10 +1185,6 @@ th {
     grid-template-columns: minmax(160px, 1fr) minmax(180px, 1fr) auto;
 }
 
-.inline-edit-form.three-columns {
-    grid-template-columns: minmax(180px, 1fr) minmax(130px, 160px) minmax(80px, 110px) auto;
-}
-
 .status-pill {
     border-radius: 999px;
     display: inline-flex;
@@ -1200,8 +1194,8 @@ th {
 }
 
 .status-pill.is-active {
-    background-color: rgba(39, 174, 96, 0.12);
-    color: var(--color-success);
+    background-color: color-mix(in srgb, var(--color-success-text) 14%, transparent);
+    color: var(--color-success-text);
 }
 
 .status-pill.is-inactive {
@@ -1228,10 +1222,8 @@ th {
     }
 
     .btn-theme-toggle {
-        top: 12px;
-        right: 12px;
-        width: 44px;
-        height: 44px;
+        width: 42px;
+        height: 42px;
     }
 
     .panel {
@@ -1240,12 +1232,22 @@ th {
     }
 
     .site-header {
-        grid-template-columns: 1fr;
-        padding-right: 56px;
+        grid-template-areas:
+            "brand toggle"
+            "nav nav";
+        grid-template-columns: 1fr auto;
     }
 
     .brand {
-        justify-self: center;
+        grid-area: brand;
+    }
+
+    .btn-theme-toggle {
+        grid-area: toggle;
+    }
+
+    .top-nav {
+        grid-area: nav;
     }
 
     .brand-mark {
@@ -1275,7 +1277,7 @@ th {
     .product-create-grid,
     .admin-filters,
     .sortable-row,
-    .product-edit-form {
+    .inline-edit-form.product-edit-form {
         grid-template-columns: 1fr;
     }
 
@@ -1320,16 +1322,14 @@ th {
     .product-create-grid,
     .admin-filters,
     .inline-edit-form,
-    .inline-edit-form.two-columns,
-    .inline-edit-form.three-columns {
+    .inline-edit-form.two-columns {
         grid-template-columns: 1fr;
     }
 
 
     .summary-list li,
     .order-items li {
-        align-items: flex-start;
-        flex-direction: column;
+        flex-wrap: wrap;
     }
 
     .modal-actions {
@@ -1406,7 +1406,7 @@ th {
 }
 
 .error-banner .eyebrow {
-    color: rgba(255, 255, 255, 0.82);
+    color: var(--color-on-fill-muted);
     margin-bottom: 4px;
 }
 
@@ -1536,4 +1536,357 @@ textarea:focus-visible,
 .drag-handle:focus-visible {
     background-color: var(--color-accent);
     color: var(--color-on-fill);
+}
+
+/* ==========================================================================
+   Pedido: quantidades, observação e resumo
+   ========================================================================== */
+
+.label-hint {
+    color: var(--color-text-secondary);
+    font-weight: 400;
+}
+
+textarea.form-control {
+    min-height: 64px;
+    resize: vertical;
+}
+
+/* Linha com algo escolhido: a pessoa vê de relance o que vai pedir. */
+.order-row.is-selected {
+    background-color: color-mix(in srgb, var(--color-accent-text) 8%, transparent);
+}
+
+.order-row.is-selected label {
+    font-weight: 700;
+}
+
+.stepper {
+    align-items: stretch;
+    display: grid;
+    gap: 6px;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+}
+
+.stepper input {
+    margin: 0;
+    text-align: center;
+}
+
+.stepper-button {
+    background-color: var(--color-nav-hover);
+    border: 1px solid var(--color-input-border);
+    color: var(--color-text-main);
+    font-size: 1.25rem;
+    line-height: 1;
+    margin: 0;
+    min-height: var(--control-min-height);
+    padding: 0;
+    width: 100%;
+}
+
+.stepper-button:hover {
+    border-color: var(--color-accent-text);
+}
+
+.order-row:has(.stepper) {
+    grid-template-columns: 1fr 170px;
+}
+
+.order-summary {
+    color: var(--color-text-secondary);
+    margin: 14px 0 0;
+    min-height: 1.4em;
+    text-align: center;
+}
+
+.order-note {
+    background-color: color-mix(in srgb, var(--color-accent-text) 8%, transparent);
+    border-left: 3px solid var(--color-accent-text);
+    border-radius: 4px;
+    color: var(--color-text-main);
+    margin: 14px 0 0;
+    overflow-wrap: anywhere;
+    padding: 8px 12px;
+}
+
+/* ==========================================================================
+   Painel da copa: espera, alertas e estado da conexão
+   ========================================================================== */
+
+.dashboard {
+    width: 100%;
+}
+
+.dashboard-tools {
+    align-items: flex-end;
+    display: grid;
+    gap: 6px;
+    justify-items: end;
+}
+
+.dashboard-status {
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+[data-alerts-toggle].is-active {
+    background-color: var(--color-success);
+}
+
+[data-alerts-toggle].is-active:hover {
+    background-color: var(--color-success-hover);
+}
+
+.order-header {
+    display: grid;
+    gap: 2px 12px;
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.order-header h2,
+.order-header small {
+    grid-column: 1;
+}
+
+.order-header .order-office {
+    grid-column: 1;
+}
+
+.order-header .order-wait {
+    align-self: start;
+    background-color: var(--color-nav-hover);
+    border-radius: 999px;
+    color: var(--color-text-main);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    padding: 4px 10px;
+    white-space: nowrap;
+}
+
+.order-card {
+    border-top-width: 4px;
+}
+
+.order-card.is-warn {
+    border-top-color: var(--color-warning-text);
+}
+
+.order-card.is-warn .order-wait {
+    background-color: color-mix(in srgb, var(--color-warning-text) 16%, transparent);
+    color: var(--color-warning-text);
+}
+
+.order-card.is-late {
+    border-color: var(--color-danger-text);
+}
+
+.order-card.is-late .order-wait {
+    background-color: var(--color-danger);
+    color: var(--color-on-fill);
+}
+
+.order-card.is-new {
+    animation: orderArrive 900ms ease-out both;
+}
+
+@keyframes orderArrive {
+    0% {
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent-text) 60%, transparent);
+        transform: translateY(-6px);
+    }
+    100% {
+        box-shadow: 0 0 0 14px transparent;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .order-card.is-new {
+        animation: none;
+    }
+}
+
+/* ==========================================================================
+   Administração: ações de cabeçalho e de linha, filtros do histórico
+   ========================================================================== */
+
+.header-actions,
+.row-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.btn-ghost {
+    background-color: transparent;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-main);
+}
+
+.btn-ghost:hover {
+    border-color: var(--color-accent-text);
+    color: var(--color-accent-text);
+}
+
+.history-filters {
+    grid-template-columns: repeat(3, minmax(150px, 1fr)) auto;
+}
+
+.cell-note {
+    color: var(--color-text-secondary);
+    font-size: 0.88rem;
+    margin: 6px 0 0;
+    overflow-wrap: anywhere;
+}
+
+@media screen and (max-width: 900px) {
+    .history-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-tools {
+        justify-items: stretch;
+    }
+
+    .dashboard-status {
+        text-align: center;
+    }
+
+    .header-actions {
+        justify-content: stretch;
+    }
+
+    .header-actions .btn {
+        flex: 1 1 auto;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .history-filters {
+        grid-template-columns: 1fr;
+    }
+
+    .order-row:has(.stepper) {
+        grid-template-columns: 1fr;
+    }
+
+    .row-actions {
+        justify-content: flex-end;
+    }
+
+    /* No celular da copa os três números cabem numa linha: empilhados, eles
+       empurravam o primeiro pedido para fora da tela. */
+    .dashboard-stats {
+        gap: 8px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .dashboard-stats div {
+        padding: 10px;
+    }
+
+    .dashboard-stats span {
+        font-size: 1.35rem;
+    }
+}
+
+/* ==========================================================================
+   QR codes das salas
+   ========================================================================== */
+
+.qr-office {
+    font-size: 1.15rem;
+    margin: 26px 0 12px;
+    text-align: left;
+}
+
+.qr-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.qr-card {
+    background-color: var(--color-qr-light);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    break-inside: avoid;
+    margin: 0;
+    padding: 14px;
+    text-align: center;
+}
+
+.qr-code {
+    display: block;
+    height: auto;
+    margin: 0 auto 8px;
+    max-width: 180px;
+    width: 100%;
+}
+
+.qr-code-line {
+    stroke: var(--color-qr-dark);
+}
+
+/* O cartão do QR é sempre claro (para a câmera ler), então o texto dele usa
+   o par fixo do QR em vez das cores do tema. */
+.qr-card figcaption {
+    color: var(--color-qr-dark);
+    display: grid;
+    gap: 4px;
+}
+
+.qr-card figcaption span,
+.qr-card figcaption small {
+    font-size: 0.8rem;
+    overflow-wrap: anywhere;
+}
+
+/* ==========================================================================
+   Rodapé e impressão
+   ========================================================================== */
+
+.site-footer {
+    color: var(--color-text-secondary);
+    font-size: 0.8rem;
+    margin-top: auto;
+    padding-top: 18px;
+    text-align: center;
+}
+
+@media print {
+    .site-header,
+    .site-footer,
+    .flash-stack,
+    .no-print {
+        display: none;
+    }
+
+    body {
+        background-color: var(--color-qr-light);
+        padding: 0;
+    }
+
+    .panel {
+        border: 0;
+        box-shadow: none;
+        margin: 0;
+        max-width: none;
+        padding: 0;
+    }
+
+    .qr-office {
+        color: var(--color-qr-dark);
+    }
+
+    .qr-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }

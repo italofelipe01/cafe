@@ -1,0 +1,15 @@
+{
+  "name": "Copa Pronta",
+  "short_name": "Copa",
+  "description": "Pedidos de café, água e limpeza por sala de reunião.",
+  "start_url": "../",
+  "scope": "../",
+  "display": "standalone",
+  "background_color": "#FAF6F1",
+  "theme_color": "#4A2C1D",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

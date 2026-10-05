@@ -137,3 +137,45 @@ jobs:
           flask init-db
           flask init-db | tee segunda-execucao.txt
           grep -q "Criados: 0 escritórios, 0 salas, 0 insumos" segunda-execucao.txt
+
+  docker:
+    name: Imagem Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: quality-docker-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # A imagem é o caminho para a nuvem. Construir e subir aqui garante que
+      # ela continua de pé a cada mudança, e não só no dia em que for preciso.
+      - name: Construir a imagem
+        run: docker build -t copa-pronta:ci .
+
+      - name: Recusar subir sem segredos
+        run: |
+          if docker run --rm copa-pronta:ci; then
+            echo "A imagem subiu sem SECRET_KEY e senhas." >&2
+            exit 1
+          fi
+
+      - name: Subir, migrar e responder /health
+        run: |
+          docker run -d --name copa -p 8000:8000 \
+            -e SECRET_KEY=chave-de-ci-sem-valor-em-producao-0123456789 \
+            -e ADMIN_PASSWORD=ci-admin \
+            -e COPA_PASSWORD=ci-copa \
+            copa-pronta:ci
+          for tentativa in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/health; then
+              # O log da aplicação sai no stderr do contêiner, e `docker logs`
+              # o reemite no stderr: sem 2>&1, o grep não recebe nada.
+              docker logs copa 2>&1 | grep -q "Banco pronto: migrations aplicadas"
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs copa
+          exit 1

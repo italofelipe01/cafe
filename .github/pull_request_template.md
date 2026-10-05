@@ -9,6 +9,7 @@
 - [ ] `ruff check .`, `pyright` e a suíte passam localmente.
 - [ ] Mudou `app/models.py`? A migration está no PR.
 - [ ] Mudou `app/seed.py`? Continua aditivo: só acrescenta, nunca altera registro existente.
+- [ ] Mudou `Dockerfile`, dependências ou `run.py`? `docker build` passa e a imagem sobe.
 - [ ] Decisão de arquitetura nova? Registrada em `docs/DECISIONS.md`.
 
 Não edite a versão no `pyproject.toml` nem o `CHANGELOG.md`: o workflow de

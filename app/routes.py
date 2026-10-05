@@ -6,11 +6,15 @@ e escolhe a resposta. Validação e acesso a dados ficam na camada de serviço.
 
 from __future__ import annotations
 
+import csv
+import io
 from collections.abc import Callable
 from functools import wraps
 
 from flask import (
     Blueprint,
+    Response,
+    abort,
     current_app,
     flash,
     jsonify,
@@ -24,6 +28,7 @@ from flask.typing import ResponseReturnValue
 
 from app import audit, services
 from app.extensions import csrf, limiter
+from app.models import Space
 from app.security import (
     ROLE_ADMIN,
     ROLE_COPA,
@@ -39,6 +44,12 @@ from app.security import (
 from app.services import NotFoundError, ServiceError
 
 bp = Blueprint("main", __name__)
+
+# Pedidos enviados por este navegador, que ele pode rever na confirmação. O
+# formulário é público: sem esse vínculo, /pedido/<id> exporia o pedido de
+# qualquer sala a quem trocasse o número no endereço.
+SESSION_ORDERS_KEY = "recent_orders"
+SESSION_ORDERS_LIMIT = 20
 
 
 def order_rate_limit() -> str:
@@ -174,6 +185,49 @@ def get_rooms() -> ResponseReturnValue:
     return jsonify([space.name for space in services.active_spaces_for(office_name)])
 
 
+def render_index(error: str | None = None, status: int = 200) -> ResponseReturnValue:
+    return (
+        render_template(
+            "index.html",
+            offices=services.active_offices(),
+            catalog=services.active_catalog_by_office(),
+            error=error,
+        ),
+        status,
+    )
+
+
+def render_order_form(
+    space: Space, error: str | None = None, status: int = 200
+) -> ResponseReturnValue:
+    """Formulário de itens da sala.
+
+    Num reenvio com erro, devolve o que foi digitado e o mesmo token: nada foi
+    gravado, então o próximo envio ainda é o primeiro deste formulário.
+    """
+
+    if error:
+        values = request.form
+        token = services.clean_request_token(request.form.get("request_token"))
+    else:
+        values = {}
+        token = None
+
+    return (
+        render_template(
+            "sala_form.html",
+            office=space.office,
+            room=space,
+            products=services.active_products(),
+            values=values,
+            request_token=token or services.new_request_token(),
+            note_max_length=services.NOTE_MAX_LENGTH,
+            error=error,
+        ),
+        status,
+    )
+
+
 @bp.route("/select_room", methods=["POST"])
 def select_room() -> ResponseReturnValue:
     try:
@@ -181,64 +235,81 @@ def select_room() -> ResponseReturnValue:
             request.form.get("office", ""), request.form.get("room", "")
         )
     except ServiceError as error:
-        return (
-            render_template(
-                "index.html",
-                offices=services.active_offices(),
-                catalog=services.active_catalog_by_office(),
-                error=error.message,
-            ),
-            error.status_code,
-        )
+        return render_index(error.message, error.status_code)
 
-    return render_template(
-        "sala_form.html",
-        office=space.office,
-        room=space,
-        products=services.active_products(),
-    )
+    # Redireciona para o endereço da sala: recarregar a página deixa de
+    # reenviar o formulário, e o endereço pode virar favorito ou QR code.
+    return redirect(url_for("main.room_order", space_id=space.id))
+
+
+@bp.route("/pedido/sala/<int:space_id>")
+def room_order(space_id: int) -> ResponseReturnValue:
+    try:
+        space = services.require_orderable_space(space_id)
+    except ServiceError as error:
+        return render_index(error.message, error.status_code)
+
+    return render_order_form(space)
 
 
 @bp.route("/submit_form", methods=["POST"])
 @limiter.limit(order_rate_limit)
 def submit_form() -> ResponseReturnValue:
-    office_name = request.form.get("office", "")
-    room_name = request.form.get("room", "")
-
     try:
-        space = services.require_space(office_name, room_name)
+        space = services.require_space(
+            request.form.get("office", ""), request.form.get("room", "")
+        )
     except ServiceError:
-        return (
-            render_template(
-                "sala_form.html",
-                office_name=office_name,
-                room_name=room_name,
-                products=services.active_products(),
-                error="Escritório ou sala inválidos. Volte e selecione novamente.",
-            ),
-            400,
+        return render_index(
+            "Escritório ou sala inválidos. Selecione novamente.", 400
         )
 
     try:
         requested_items = services.collect_order_items(request.form)
+        note = services.clean_note(request.form.get("note"))
     except ServiceError as error:
-        return (
-            render_template(
-                "sala_form.html",
-                office=space.office,
-                room=space,
-                products=services.active_products(),
-                error=error.message,
-            ),
-            error.status_code,
-        )
+        return render_order_form(space, error.message, error.status_code)
 
-    order = services.create_order(space, requested_items)
-    audit("pedido.criado", pedido=order.id, sala=space.name, itens=len(requested_items))
-
-    return render_template(
-        "confirm_pedido.html", order=order, requested_items=order.items
+    placed = services.create_order(
+        space,
+        requested_items,
+        note=note,
+        request_token=services.clean_request_token(request.form.get("request_token")),
     )
+
+    if placed.created:
+        audit(
+            "pedido.criado",
+            pedido=placed.order.id,
+            sala=space.name,
+            itens=len(requested_items),
+        )
+    else:
+        flash("Este pedido já tinha sido enviado. Nada foi duplicado.", "info")
+
+    remember_order(placed.order.id)
+
+    # Post/Redirect/Get: atualizar a confirmação não reenvia o pedido.
+    return redirect(url_for("main.order_confirmation", order_id=placed.order.id))
+
+
+def remember_order(order_id: int) -> None:
+    recent = [i for i in session.get(SESSION_ORDERS_KEY, []) if i != order_id]
+    recent.append(order_id)
+    session[SESSION_ORDERS_KEY] = recent[-SESSION_ORDERS_LIMIT:]
+
+
+@bp.route("/pedido/<int:order_id>")
+def order_confirmation(order_id: int) -> ResponseReturnValue:
+    if order_id not in session.get(SESSION_ORDERS_KEY, []):
+        abort(404)
+
+    try:
+        order = services.get_order(order_id)
+    except NotFoundError:
+        abort(404)
+
+    return render_template("confirm_pedido.html", order=order)
 
 
 # --------------------------------------------------------------------------- #
@@ -248,7 +319,11 @@ def submit_form() -> ResponseReturnValue:
 @bp.route("/copa")
 @login_required(ROLE_COPA)
 def copa_dashboard() -> str:
-    return render_template("copa_dashboard.html")
+    return render_template(
+        "copa_dashboard.html",
+        warn_minutes=current_app.config["ORDER_WARN_MINUTES"],
+        late_minutes=current_app.config["ORDER_LATE_MINUTES"],
+    )
 
 
 @bp.route("/api/orders", methods=["GET"])
@@ -279,23 +354,32 @@ def admin_dashboard() -> str:
     return render_template("admin/dashboard.html", stats=services.dashboard_stats())
 
 
+def history_filters_from_request() -> services.HistoryFilters:
+    """Lê os filtros do histórico. Data inválida vira ``ServiceError``."""
+
+    raw_office_id = request.args.get("office_id", "").strip()
+    return services.HistoryFilters(
+        start=services.parse_date(request.args.get("start")),
+        end=services.parse_date(request.args.get("end")),
+        office_id=int(raw_office_id) if raw_office_id.isdecimal() else None,
+    )
+
+
 @bp.route("/admin/history")
 @login_required(ROLE_ADMIN)
 def admin_history() -> ResponseReturnValue:
-    raw_office_id = request.args.get("office_id", "").strip()
-    office_id = int(raw_office_id) if raw_office_id.isdecimal() else None
     page = request.args.get("page", "1")
     page_number = int(page) if page.isdecimal() and int(page) > 0 else 1
+    raw_filters = {
+        "start": request.args.get("start", ""),
+        "end": request.args.get("end", ""),
+        "office_id": request.args.get("office_id", "").strip(),
+    }
 
     try:
-        start = services.parse_date(request.args.get("start"))
-        end = services.parse_date(request.args.get("end"))
-        pagination = services.completed_orders_page(
-            start=start, end=end, office_id=office_id, page=page_number
-        )
-        summary = services.completed_orders_summary(
-            start=start, end=end, office_id=office_id
-        )
+        filters = history_filters_from_request()
+        pagination = services.completed_orders_page(**filters, page=page_number)
+        summary = services.completed_orders_summary(**filters)
     except ServiceError as error:
         return (
             render_template(
@@ -314,11 +398,33 @@ def admin_history() -> ResponseReturnValue:
         offices=services.all_offices(),
         pagination=pagination,
         summary=summary,
-        filters={
-            "start": request.args.get("start", ""),
-            "end": request.args.get("end", ""),
-            "office_id": raw_office_id,
-        },
+        filters=raw_filters,
+    )
+
+
+@bp.route("/admin/history.csv")
+@login_required(ROLE_ADMIN)
+def admin_history_export() -> ResponseReturnValue:
+    try:
+        rows = services.completed_orders_export(**history_filters_from_request())
+    except ServiceError as error:
+        flash(error.message, "error")
+        return redirect(url_for("main.admin_history"))
+
+    # Ponto e vírgula e BOM: é o que o Excel em português abre direto, com
+    # acentos e colunas no lugar, sem assistente de importação.
+    buffer = io.StringIO()
+    buffer.write("\ufeff")
+    writer = csv.writer(buffer, delimiter=";")
+    writer.writerow(services.HISTORY_EXPORT_HEADER)
+    writer.writerows(rows)
+
+    audit("historico.exportado", linhas=len(rows))
+    filename = f"historico-copa-{services.local_now():%Y%m%d-%H%M}.csv"
+    return Response(
+        buffer.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
 
@@ -362,6 +468,30 @@ def admin_spaces() -> str:
         "admin/spaces.html",
         offices=services.all_offices(),
         spaces=services.all_spaces(),
+    )
+
+
+@bp.route("/admin/spaces/qrcodes")
+@login_required(ROLE_ADMIN)
+def admin_space_qrcodes() -> str:
+    from app.qrcodes import is_loopback, qr_svg
+
+    base_url = current_app.config["PUBLIC_BASE_URL"] or request.host_url.rstrip("/")
+
+    def room_card(space):
+        url = base_url + url_for("main.room_order", space_id=space.id)
+        return space, url, qr_svg(url)
+
+    cards = [
+        (office, [room_card(space) for space in spaces])
+        for office, spaces in services.active_catalog_by_office()
+    ]
+    return render_template(
+        "admin/qrcodes.html",
+        cards=cards,
+        base_url=base_url,
+        loopback=is_loopback(base_url),
+        configured=bool(current_app.config["PUBLIC_BASE_URL"]),
     )
 
 
@@ -466,6 +596,21 @@ def health() -> ResponseReturnValue:
         db.session.execute(text("SELECT 1"))
     except Exception:  # noqa: BLE001 - qualquer falha aqui significa indisponível
         current_app.logger.exception("Health check falhou ao consultar o banco.")
-        return jsonify({"status": "degraded", "database": "unavailable"}), 503
+        return (
+            jsonify(
+                {
+                    "status": "degraded",
+                    "database": "unavailable",
+                    "version": current_app.config["APP_VERSION"],
+                }
+            ),
+            503,
+        )
 
-    return jsonify({"status": "ok", "database": "ok"})
+    return jsonify(
+        {
+            "status": "ok",
+            "database": "ok",
+            "version": current_app.config["APP_VERSION"],
+        }
+    )
