@@ -1,0 +1,29 @@
+# Copa Pronta em Docker, com o banco SQLite num volume persistente.
+#
+#   python run.py --setup      # uma vez: gera .env com SECRET_KEY e senhas
+#   docker compose up -d --build
+#
+# O Compose lê o .env desta pasta só para preencher as variáveis abaixo. Banco,
+# host e porta internos ficam fixos aqui, porque dentro do contêiner são outros.
+
+services:
+  copa:
+    build: .
+    image: copa-pronta
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-5000}:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?defina SECRET_KEY (python run.py --setup gera uma)}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?defina ADMIN_PASSWORD}
+      COPA_PASSWORD: ${COPA_PASSWORD:?defina COPA_PASSWORD}
+      # HTTP na rede local. Atrás de um proxy com HTTPS: true, e TRUST_PROXY_HOPS=1.
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-0}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - copa-data:/data
+
+volumes:
+  copa-data:
